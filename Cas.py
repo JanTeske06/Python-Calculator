@@ -147,11 +147,9 @@ def ast(received_string):
 
         # NEUE FÄHIGKEIT:
         def evaluate(self):
-            # 1. Rekursiv die Kinder fragen
             left_value = self.left.evaluate()
             right_value = self.right.evaluate()
 
-            # 2. Ergebnisse kombinieren
             if self.operator == '+':
                 return left_value + right_value
             elif self.operator == '-':
@@ -164,7 +162,7 @@ def ast(received_string):
                 return left_value / right_value
             elif self.operator == '=':
                 return left_value == right_value
-                #raise ValueError("Kann '=' Operator nicht auswerten, nur parsen.")
+               
             else:
                 raise ValueError(f"Unbekannter Operator: {self.operator}")
 
@@ -179,16 +177,14 @@ def ast(received_string):
             print("Currently at:" + str(token) + "in parse_factor")
 
         if token == "(":
-            # 1. "Reset": Rufe den Chef ('parse_sum') und SPEICHERE den Baum
+            
             baum_in_der_klammer = parse_sum(tokens)
 
-            # 2. KORREKTE PRÜFUNG:
-            #    Prüfe, ob die Liste jetzt leer ist (dann fehlt ')')
-            #    ODER ob das nächste Token (das du jetzt "isst") nicht ')' ist.
+            
             if not tokens or tokens.pop(0) != ')':
                 raise SyntaxError("Fehlende schließende Klammer ')'")
 
-            # 3. Gib den Baum zurück, der in der Klammer war
+           
             return baum_in_der_klammer
 
         elif isInt(token):
@@ -197,7 +193,7 @@ def ast(received_string):
         elif isfloat(token):
             return Number(token)
 
-        elif "var" in str(token):  # Sicherer mit str(token)
+        elif "var" in str(token):  
             return Variable(token)
 
         else:
@@ -254,12 +250,12 @@ def ast(received_string):
 
 def main():
     # received_string = sys.argv[1]
-    received_string = "(100 - 20.5) / (2.5 * 2) + (30 / 10 - 1)=17.9"  # (Diese Zeile ist gut, aber ast() hat sie auch)
+    received_string = "(100 - 20.5) / (2.5 * 2) + (30 / 10 - 1)=17.9" 
 
     finaler_baum = ast(received_string)
 
     try:
-        # 'finaler_baum' ist jetzt in main() bekannt!
+       
         ergebnis = finaler_baum.evaluate()
 
         # ...
@@ -271,3 +267,4 @@ def main():
 if __name__ == "__main__":
     debug = 0  # 1 = activated, 0 = deactivated
     main()
+
