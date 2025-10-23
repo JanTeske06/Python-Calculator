@@ -163,7 +163,8 @@ def ast(received_string):
                     raise ZeroDivisionError("Teilen durch Null")
                 return left_value / right_value
             elif self.operator == '=':
-                raise ValueError("Kann '=' Operator nicht auswerten, nur parsen.")
+                return left_value == right_value
+                #raise ValueError("Kann '=' Operator nicht auswerten, nur parsen.")
             else:
                 raise ValueError(f"Unbekannter Operator: {self.operator}")
 
@@ -253,7 +254,7 @@ def ast(received_string):
 
 def main():
     # received_string = sys.argv[1]
-    received_string = "(100 - 20.5) / (2.5 * 2) + (30 / 10 - 1)"  # (Diese Zeile ist gut, aber ast() hat sie auch)
+    received_string = "(100 - 20.5) / (2.5 * 2) + (30 / 10 - 1)=17.9"  # (Diese Zeile ist gut, aber ast() hat sie auch)
 
     finaler_baum = ast(received_string)
 
