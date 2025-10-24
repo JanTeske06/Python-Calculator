@@ -4,6 +4,7 @@ import sys
 import subprocess
 import os
 from pathlib import Path
+import time
 
 CalcSmplfd = str(Path(__file__).resolve().parent / "CalcSmplfd.py")
 python_interpreter = sys.executable
@@ -99,6 +100,8 @@ class CalculatorPrototype(QtWidgets.QWidget):
             return
 
         elif value == '⏎':
+            self.display.setText("...")
+            QtWidgets.QApplication.processEvents()
             ergebnis = Calc(current_text)
             if ergebnis == "True":
                 current_text =  (ergebnis + "    " + current_text)
