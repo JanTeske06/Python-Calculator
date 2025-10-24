@@ -253,10 +253,30 @@ def translator(problem):
         elif(current_char) in Science_Operations:
             full_problem.append(ScienceCalculator(current_char))
 
-        elif((current_char) == 's' or (current_char) == 'c'  or (current_char) == 't'or(current_char) == 'l') and problemlength - b >= 5:
-            if(problem[b+1] == 'i' and problem[b+2] == 'n' ) or (problem[b+1] == 'o' and problem[b+2] == 's') or (problem[b+1] == 'a' and problem[b+2] == 'n') or (problem[b+1] == 'o'and problem[b+2] == 'g' ):
-                (ScienceOp,b) = isolate_SCT(problem,b)
-                full_problem.append(ScienceCalculator(ScienceOp))
+
+        elif ((current_char) == 's' or (current_char) == 'c' or (current_char) == 't' or (
+        current_char) == 'l') and problemlength - b >= 5:
+
+            if (problem[b + 1] == 'i' and problem[b + 2] == 'n') or (
+                    problem[b + 1] == 'o' and problem[b + 2] == 's') or (
+                    problem[b + 1] == 'a' and problem[b + 2] == 'n') or (
+                    problem[b + 1] == 'o' and problem[b + 2] == 'g'):
+
+                (ScienceOp, b_neu) = isolate_SCT(problem, b)
+
+                b = b_neu
+
+                ergebnis_string = ScienceCalculator(ScienceOp)
+
+                try:
+
+                    berechneter_wert = float(ergebnis_string)
+
+                    full_problem.append(berechneter_wert)
+
+                except ValueError:
+                    full_problem.append(ergebnis_string)
+                continue
 
         else:
             if current_char in var_list:
