@@ -1,11 +1,37 @@
 import sys
 import math
+from PySide6 import QtWidgets
+from PySide6.QtCore import Qt
+import sys
+import subprocess
+import os
+from pathlib import Path
+import time
 
 
 global_subprocess = None
-
+python_interpreter = sys.executable
 Operations = ["+","-","*","/","=","^"]
-Science_Operations = ["sin","cos","tan","10^x","log","e"]
+Science_Operations = ["sin","cos","tan","10^x","log","e", "π"]
+ScienceCalc = str(Path(__file__).resolve().parent / "ScienceCalc.py")
+
+def ScienceCalculator(problem):
+    cmd = [
+            python_interpreter,
+            ScienceCalc,
+            problem
+
+    ]
+    try:
+        ergebnis = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True)
+        zurueckgeschickter_string = ergebnis.stdout.strip()
+        return zurueckgeschickter_string
+    except subprocess.CalledProcessError as e:
+        print(f"Ein Fehler ist aufgetreten: {e}")
 
 def isInt(zahl):
     try:
@@ -22,24 +48,19 @@ def isfloat(zahl):
         return False
 
 
+def isScOp(zahl):
+    try:
+        return Operations.index(zahl)
+    except ValueError:
+        return -1
+
 
 def isOp(zahl):
     try:
-        index_position = Operations.index(zahl)
-        if index_position == 0:
-            return index_position
-        elif index_position == 1:
-            return index_position
-        elif index_position == 2:
-            return index_position
-        elif index_position == 3:
-            return index_position
-        elif index_position == 4:
-            return index_position
-        elif index_position == 5:
-            return index_position
+        return Operations.index(zahl)
     except ValueError:
         return -1
+
 
 
 def translator(problem):
@@ -83,7 +104,9 @@ def translator(problem):
 
         elif current_char == ")":
             full_problem.append(")")
-
+            
+        elif(current_char) in Science_Operations:
+            full_problem.append(ScienceCalculator(current_char))
         else:
             if current_char in var_list:
                 full_problem.append("var" + str(var_list.index(current_char)))
