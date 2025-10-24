@@ -4,7 +4,7 @@ import math
 
 global_subprocess = None
 
-Operations = ["+","-","*","/","="]
+Operations = ["+","-","*","/","=","^"]
 Science_Operations = ["sin","cos","tan","10^x","log","e"]
 
 def isInt(zahl):
@@ -35,6 +35,8 @@ def isOp(zahl):
         elif index_position == 3:
             return index_position
         elif index_position == 4:
+            return index_position
+        elif index_position == 5:
             return index_position
     except ValueError:
         return -1
@@ -156,6 +158,8 @@ def ast(received_string):
                 return left_value - right_value
             elif self.operator == '*':
                 return left_value * right_value
+            elif self.operator == '^':
+                return left_value ** right_value
             elif self.operator == '/':
                 if right_value == 0:
                     raise ZeroDivisionError("Teilen durch Null")
@@ -168,7 +172,16 @@ def ast(received_string):
         def __repr__(self):
             return f"BinOp({self.operator!r}, left={self.left}, right={self.right})"
 
+    def parse_power(tokens):
+        aktueller_baum = parse_factor(tokens)
 
+        # 2. Die "DANACH" Schleife (für '^')
+        while tokens and tokens[0] in ("^"):
+            operator = tokens.pop(0)
+            rechtes_teil = parse_factor(tokens)
+            aktueller_baum = BinOp(aktueller_baum, operator, rechtes_teil)
+
+        return aktueller_baum
 
     def parse_factor(tokens):
         token = tokens.pop(0)
@@ -200,10 +213,10 @@ def ast(received_string):
 
     def parse_term(tokens):
 
-        aktueller_baum = parse_factor(tokens)
+        aktueller_baum = parse_power(tokens)
         while tokens and tokens[0] in ("*","/"):
             operator = tokens.pop(0)
-            rechtes_teil = parse_factor(tokens)
+            rechtes_teil = parse_power(tokens)
             aktueller_baum = BinOp(aktueller_baum, operator, rechtes_teil)
 
         return aktueller_baum
@@ -264,8 +277,10 @@ def main():
         else:
             print(ergebnis)
 
-    except (ValueError, SyntaxError, ZeroDivisionError) as e:  # (Alle Fehler fangen)
-        print(f"Fehler: {e}")
+
+    except (ValueError, SyntaxError, ZeroDivisionError) as e:
+        print(f"FEHLER: {e}")
+
 
 if __name__ == "__main__":
     debug = 0  # 1 = activated, 0 = deactivated
