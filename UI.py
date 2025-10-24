@@ -54,9 +54,9 @@ class CalculatorPrototype(QtWidgets.QWidget):
         button_grid.setSpacing(0)
         button_grid.setContentsMargins(0, 0, 0, 0)
 
-        for i in range(6):  # vertikal
+        for i in range(7):  # vertikal
             button_grid.setRowStretch(i, 1)
-        for j in range(4):  # horizental
+        for j in range(5):  # horizental
             button_grid.setColumnStretch(j, 1)
 
         expanding_policy = QtWidgets.QSizePolicy(
@@ -64,19 +64,37 @@ class CalculatorPrototype(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Policy.Expanding
         )
 
+        # buttons = [
+        #     ('f', 0, 0), ('↷', 0, 1), ('↶', 0, 2), ('<', 0, 3),
+        #     ('(', 1, 0), (')', 1, 1), ('^', 1, 2), ('/', 1, 3),
+        #     ('7', 2, 0), ('8', 2, 1), ('9', 2, 2), ('*', 2, 3),
+        #     ('4', 3, 0), ('5', 3, 1), ('6', 3, 2), ('-', 3, 3),
+        #     ('1', 4, 0), ('2', 4, 1), ('3', 4, 2), ('+', 4, 3),
+        #     ('C', 5, 0), ('0', 5, 1), ('=', 5, 2), ('⏎', 5, 3)
+        # ]
+
         buttons = [
-            ('f', 0, 0), ('↷', 0, 1), ('↶', 0, 2), ('<', 0, 3),
-            ('(', 1, 0), (')', 1, 1), ('^', 1, 2), ('/', 1, 3),
-            ('7', 2, 0), ('8', 2, 1), ('9', 2, 2), ('*', 2, 3),
-            ('4', 3, 0), ('5', 3, 1), ('6', 3, 2), ('-', 3, 3),
-            ('1', 4, 0), ('2', 4, 1), ('3', 4, 2), ('+', 4, 3),
-            ('C', 5, 0), ('0', 5, 1), ('=', 5, 2), ('⏎', 5, 3)  #
-            # --------------------------------------------------------------------------------------
+            ('←', 0, 0), ('→', 0, 1), ('↷', 0, 2), ('↶', 0, 3), ('<', 0, 4),
+
+            ('π', 1, 0), ('e^', 1, 1), ('x', 1, 2), ('x', 1, 3), ('/', 1, 4),
+
+            ('x', 2, 0), ('(', 2, 1), (')', 2, 2), ('^', 2, 3), ('*', 2, 4),
+
+            ('x', 3, 0),  ('7', 3, 1), ('8', 3, 2), ('9', 3, 3), ('-', 3, 4),
+
+            ('x', 4, 0), ('4', 4, 1), ('5', 4, 2), ('6', 4, 3), ('+', 4, 4),
+
+            ('x', 5, 0), ('1', 5, 1), ('2', 5, 2), ('3', 5, 3), ('.', 5, 4),
+
+            ('x', 6, 0), ('C', 6, 1), ('0', 6, 2), ('=', 6, 3), ('⏎', 6, 4)
         ]
         for text, row, col in buttons:
             button = QtWidgets.QPushButton(text)
 
             button.setSizePolicy(expanding_policy)
+            if text == '⏎':
+                # Das Stylesheet setzt die Farbe
+                button.setStyleSheet("background-color: #007bff; color: white; font-weight: bold;")
             button.clicked.connect(lambda checked=False, val=text: self.handle_button_press(val))
             button_grid.addWidget(button, row, col)
 
