@@ -12,7 +12,7 @@ import base64
 
 
 
-cas = True
+cas = False
 var_counter = 0
 var_list = []
 global_subprocess = None
@@ -302,6 +302,7 @@ def translator(problem):
 
 
 def ast(received_string):
+    global cas
     analysed = translator(received_string)
     if global_subprocess == "0":
         print(analysed)
@@ -370,9 +371,6 @@ def ast(received_string):
 
         return aktueller_baum
 
-
-
-
     def parse_gleichung(tokens):
         linke_seite = parse_sum(tokens)
         if tokens and tokens[0] == "=":
@@ -383,9 +381,14 @@ def ast(received_string):
         return linke_seite
 
     finaler_baum = parse_gleichung(analysed)
+
+    if isinstance(finaler_baum, BinOp) and finaler_baum.operator == '=' and var_counter >= 1:
+        cas = True
+
     if global_subprocess == "0":
         print("Finaler AST:")
         print(finaler_baum)
+
     return finaler_baum
 
 
