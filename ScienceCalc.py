@@ -42,6 +42,10 @@ def isSCT(problem): #Sin / Cos / Tan
             clean_number= math.radians(clean_number)
         return math.cos(clean_number)
 
+    elif "log" in problem:
+        clean_number = float(problem[start_index + 1 : end_index])
+        return math.log(clean_number)
+
 
 
     else:
@@ -67,8 +71,8 @@ def main():
 
     
     if len(sys.argv) > 1 or test == 1:
-        #received_string = sys.argv[1]
-        received_string = "log(23)"
+        received_string = sys.argv[1]
+        #received_string = "log(23)"
         global_subprocess = "1"
         start_index = received_string.find('(')
         end_index = received_string.find(')')
