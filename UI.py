@@ -7,8 +7,8 @@ from pathlib import Path
 
 CalcSmplfd = str(Path(__file__).resolve().parent / "CalcSmplfd.py")
 python_interpreter = sys.executable
-history_back = [""] * 15
-history_forw = [""] * 15
+history = ["0"]
+history_index = 0
 
 def Calc(problem):
     cmd = [
@@ -80,8 +80,8 @@ class CalculatorPrototype(QtWidgets.QWidget):
             button_grid.addWidget(button, row, col)
 
     def handle_button_press(self, value):
-        global history_back
-        global history_forw
+        global history
+        global history_index
         current_text = self.display.text()
 
         if value == 'C':
@@ -110,19 +110,22 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 current_text = ergebnis
 
         elif value == '↶':
-            history_forw.pop(0)
-            current_text = history_back.pop(0)
-            current_text = history_back[0]
-            history_forw.insert(0,current_text)
-            if history_back [0] == "":
-                current_text = "0"
+            if history_index > 0:
+                history_index -= 1
+                current_text = history[history_index]
+                self.display.setText(current_text)
+                print(f"Es wurde die Taste '{value}' gedrückt.")
+            return
+
 
         elif value == '↷':
-            current_text = history_forw.pop(0)
-            history_forw.insert(0,current_text)
-            history_back.insert(0, current_text)
-            if history_back [0] == "":
-                current_text = "0"
+            neuer_index = history_index + 1
+            if neuer_index < len(history) and history[neuer_index] != "":
+                history_index = neuer_index
+                current_text = history[history_index]
+                self.display.setText(current_text)
+                print(f"Es wurde die Taste '{value}' gedrückt.")
+            return
 
 
         else:
@@ -130,8 +133,9 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 current_text = ""
             current_text += str(value)
 
-        history_back.insert(0, current_text)
         self.display.setText(current_text)
+        history.insert(history_index,current_text)
+        history_index +=1
 
         print(f"Es wurde die Taste '{value}' gedrückt.")
 
