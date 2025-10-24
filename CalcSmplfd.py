@@ -2,7 +2,7 @@ import sys
 import math
 
 
-
+global_subprocess = None
 
 Operations = ["+","-","*","/","="]
 Science_Operations = ["sin","cos","tan","10^x","log","e"]
@@ -120,7 +120,8 @@ def translator(problem):
 
 def ast(received_string):
     analysed = translator(received_string)
-    print(analysed)
+    if global_subprocess == "0":
+        print(analysed)
 
     class Number:
         def __init__(self,value):
@@ -145,7 +146,6 @@ def ast(received_string):
             self.operator = operator
             self.right = right
 
-        # NEUE FÄHIGKEIT:
         def evaluate(self):
             left_value = self.left.evaluate()
             right_value = self.right.evaluate()
@@ -162,7 +162,6 @@ def ast(received_string):
                 return left_value / right_value
             elif self.operator == '=':
                 return left_value == right_value
-               
             else:
                 raise ValueError(f"Unbekannter Operator: {self.operator}")
 
@@ -177,14 +176,11 @@ def ast(received_string):
             print("Currently at:" + str(token) + "in parse_factor")
 
         if token == "(":
-            
             baum_in_der_klammer = parse_sum(tokens)
 
-            
             if not tokens or tokens.pop(0) != ')':
                 raise SyntaxError("Fehlende schließende Klammer ')'")
 
-           
             return baum_in_der_klammer
 
         elif isInt(token):
@@ -193,7 +189,7 @@ def ast(received_string):
         elif isfloat(token):
             return Number(token)
 
-        elif "var" in str(token):  
+        elif "var" in str(token):
             return Variable(token)
 
         else:
@@ -241,25 +237,32 @@ def ast(received_string):
         return linke_seite
 
     finaler_baum = parse_gleichung(analysed)
-
-    # 2. Gib den fertigen Baum aus
-    print("Finaler AST:")
-    print(finaler_baum)
+    if global_subprocess == "0":
+        print("Finaler AST:")
+        print(finaler_baum)
     return finaler_baum
 
 
 def main():
-    # received_string = sys.argv[1]
-    received_string = "(100 - 20.5) / (2.5 * 2) + (30 / 10 - 1)=17.9" 
+    global global_subprocess
+    if len(sys.argv) > 1:
+        received_string = sys.argv[1]
+        global_subprocess = "1"
+
+
+    else:
+        global_subprocess = "0"
+        print("Gebe das Problem ein: ")
+        received_string = input()
 
     finaler_baum = ast(received_string)
 
     try:
-       
         ergebnis = finaler_baum.evaluate()
-
-        # ...
-        print(f"Das Ergebnis der Berechnung ist: {ergebnis}")
+        if global_subprocess == "0":
+            print(f"Das Ergebnis der Berechnung ist: {ergebnis}")
+        else:
+            print(ergebnis)
 
     except (ValueError, SyntaxError, ZeroDivisionError) as e:  # (Alle Fehler fangen)
         print(f"Fehler: {e}")
@@ -267,4 +270,3 @@ def main():
 if __name__ == "__main__":
     debug = 0  # 1 = activated, 0 = deactivated
     main()
-
