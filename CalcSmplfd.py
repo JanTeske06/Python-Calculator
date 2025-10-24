@@ -55,8 +55,15 @@ def translator(problem):
 
         if isInt(current_char):
             str_number = current_char
+            hat_schon_komma = False  
 
             while (b + 1 < problemlength) and (isInt(problem[b + 1]) or problem[b + 1] == "."):
+
+                if problem[b + 1] == ".":
+                    if hat_schon_komma:
+                        raise SyntaxError("Doppeltes Kommazeichen.")
+                    hat_schon_komma = True
+
                 b += 1
                 str_number += problem[b]
 
@@ -174,8 +181,6 @@ def ast(received_string):
 
     def parse_power(tokens):
         aktueller_baum = parse_factor(tokens)
-
-        # 2. Die "DANACH" Schleife (für '^')
         while tokens and tokens[0] in ("^"):
             operator = tokens.pop(0)
             rechtes_teil = parse_factor(tokens)
@@ -268,9 +273,10 @@ def main():
         print("Gebe das Problem ein: ")
         received_string = input()
 
-    finaler_baum = ast(received_string)
+
 
     try:
+        finaler_baum = ast(received_string)
         ergebnis = finaler_baum.evaluate()
         if global_subprocess == "0":
             print(f"Das Ergebnis der Berechnung ist: {ergebnis}")
