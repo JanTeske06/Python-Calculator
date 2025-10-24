@@ -7,18 +7,38 @@ import subprocess
 import os
 from pathlib import Path
 import time
-
-
+cas = False
+var_counter = 0
 global_subprocess = None
 python_interpreter = sys.executable
 Operations = ["+","-","*","/","=","^"]
 Science_Operations = ["sin","cos","tan","10^x","log","e", "π"]
 ScienceCalc = str(Path(__file__).resolve().parent / "ScienceCalc.py")
+Casdir = str(Path(__file__).resolve().parent / "Cas.py")
 
 def ScienceCalculator(problem):
     cmd = [
             python_interpreter,
             ScienceCalc,
+            problem
+
+    ]
+    try:
+        ergebnis = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True)
+        zurueckgeschickter_string = ergebnis.stdout.strip()
+        return zurueckgeschickter_string
+    except subprocess.CalledProcessError as e:
+        print(f"Ein Fehler ist aufgetreten: {e}")
+
+
+def Cas(problem):
+    cmd = [
+            python_interpreter,
+            Casdir,
             problem
 
     ]
@@ -50,7 +70,7 @@ def isfloat(zahl):
 
 def isScOp(zahl):
     try:
-        return Operations.index(zahl)
+        return Science_Operations.index(zahl)
     except ValueError:
         return -1
 
@@ -62,9 +82,24 @@ def isOp(zahl):
         return -1
 
 
+def isolate_SCT(problem, b_anfang):
+    start = b_anfang
+    start_klammer_index = problem.find('(', start)
+    if start_klammer_index == -1:
+        raise SyntaxError("Fehlende öffnende Klammer nach Funktionsnamen.")
+    b = start_klammer_index + 1
+    bracket_count = 1
+    while bracket_count != 0 and b < len(problem):
+        if problem[b] == '(':
+            bracket_count += 1
+        elif problem[b] == ')':
+            bracket_count -= 1
+        b += 1
+    ergebnis = problem[start:b]
+    return (ergebnis, b)
 
 def translator(problem):
-    var_counter = 0
+    global var_counter
     problemlength = len(problem)
     full_problem = []
     b = 0
@@ -107,6 +142,12 @@ def translator(problem):
             
         elif(current_char) in Science_Operations:
             full_problem.append(ScienceCalculator(current_char))
+
+        elif((current_char) == 's' or (current_char) == 'c'  or (current_char) == 't') and problemlength - b >= 5:
+            if(problem[b+1] == 'i' and problem[b+2] == 'n' ) or (problem[b+1] == 'o' and problem[b+2] == 's') or (problem[b+1] == 'a' and problem[b+2] == 'n'):
+                (ScienceOp,b) = isolate_SCT(problem,b)
+                full_problem.append(ScienceCalculator(ScienceOp))
+
         else:
             if current_char in var_list:
                 full_problem.append("var" + str(var_list.index(current_char)))
@@ -168,11 +209,12 @@ def ast(received_string):
         def __init__ (self,name):
             self.name = name
         def evaluate(self):
-            raise SyntaxError("Fehlender Solver.")
+            return self.name
         def __repr__(self):
             return f"Variable('{self.name}')"
 
     class BinOp:
+        global cas
         def __init__(self, left, operator, right):
             self.left = left
             self.operator = operator
@@ -194,8 +236,10 @@ def ast(received_string):
                 if right_value == 0:
                     raise ZeroDivisionError("Teilen durch Null")
                 return left_value / right_value
-            elif self.operator == '=':
+            elif self.operator == '='and var_counter == 0:
                 return left_value == right_value
+            elif self.operator == '=' and var_counter != 0:
+                cas = True
             else:
                 raise ValueError(f"Unbekannter Operator: {self.operator}")
 
@@ -300,7 +344,10 @@ def main():
 
     try:
         finaler_baum = ast(received_string)
-        ergebnis = finaler_baum.evaluate()
+        if cas == True:
+            ergebnis = cas(finaler_baum)
+        else:
+            ergebnis = finaler_baum.evaluate()
         if global_subprocess == "0":
             print(f"Das Ergebnis der Berechnung ist: {ergebnis}")
         else:
