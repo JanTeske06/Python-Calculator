@@ -7,8 +7,6 @@ import subprocess
 import os
 from pathlib import Path
 import time
-import pickle
-import base64
 
 
 
@@ -469,3 +467,4 @@ def main():
 if __name__ == "__main__":
     debug = 0  # 1 = activated, 0 = deactivated
     main()
+
