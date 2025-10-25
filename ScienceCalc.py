@@ -98,6 +98,9 @@ def main():
                 ergebnis = isLog(number, base)
             else:
                 ergebnis = isLog(float(clean_number), float(0))
+
+        elif "e" in received_string:
+            ergebnis = math.e
         else:
             ergebnis = "Error. Konnte keine Operation zuordnen"
         print(ergebnis)
