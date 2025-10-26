@@ -14,7 +14,7 @@ A key characteristic of this project is its architecture, which relies heavily o
 * **Standard Arithmetic**: Supports addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`), and exponentiation (`^`).
 * **Scientific Functions**: Includes `sin()`, `cos()`, `tan()`, `log()`, and `√()` (square root).
 * **Constants**: Provides `π` (Pi) and `e` (Euler's number).
-* **Basic CAS (Computer Algebra System)**: Capable of solving linear equations with a single variable (e.g., `"2*x + 1 = 5"`).
+* **Basic CAS (Computer Algebra System)**: Capable of solving linear equations with a single variable (e.g., `"2*x + 1 * (3-x) = 5*x+7*x²"`).
 * **Implicit Multiplication**: Automatically detects and processes inputs such as `"5x"` or `"2(3+1)"` as multiplication.
 * **Input History**: Allows navigation through previous entries using the `↶` (undo) and `↷` (redo) buttons.
 
