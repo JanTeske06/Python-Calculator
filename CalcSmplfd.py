@@ -1,3 +1,4 @@
+# CalcSmplfd.py
 import sys
 import math
 from PySide6 import QtWidgets
@@ -467,4 +468,5 @@ def main():
 if __name__ == "__main__":
     debug = 0  # 1 = activated, 0 = deactivated
     main()
+
 
