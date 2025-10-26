@@ -1,102 +1,60 @@
-MULTI-PROCESS PYTHON CALCULATOR
-===============================
+# Calculator Prototype
+
+## Project Overview
+
+This project is a prototype for a scientific calculator developed in Python. It features a graphical user interface (GUI) built with PySide6 and a custom backend for parsing and evaluating mathematical expressions.
+
+A key characteristic of this project is its architecture, which relies heavily on `subprocess` calls to programmatically decouple the GUI from the core calculation logic.
 
 ---
-OVERVIEW
----
 
-This project is an advanced desktop calculator application developed using PySide6. Its primary feature is not just the calculation itself, but its unique multi-process architecture.
+## Features
 
-Instead of a monolithic design, this application deliberately utilizes Python's subprocess module to manage different components (UI, standard calculation, and scientific calculation) as separate, communicating processes. This approach demonstrates a practical understanding of inter-process communication (IPC), process isolation, and modular system design.
-
-The core logic features a custom-built recursive descent parser that constructs an Abstract Syntax Tree (AST) to correctly evaluate mathematical expressions, respecting the order of operations.
-
----
-KEY FEATURES
----
-
-* Modular IPC Architecture: The UI, core logic, and scientific functions run as distinct processes, communicating via standard I/O streams.
-
-* Custom Expression Parser:
-    - Tokenizer (translator): A custom lexer that scans the raw input string and converts it into a list of logical tokens (e.g., numbers, operators, parentheses).
-    - AST Parser (ast): A recursive descent parser that builds an Abstract Syntax Tree (AST) from the token stream.
-    - Evaluator: A function that traverses the AST to compute the final result, naturally enforcing the order of operations (PEMDAS/BODMAS).
-
-* Rich GUI with PySide6: A clean, responsive user interface featuring a display, a full grid of buttons, and history navigation.
-
-* Mathematical Capabilities:
-    - Full support for standard arithmetic: +, -, *, /, ^ (power).
-    - Correctly handles nested parentheses ().
-    - Supports implicit multiplication (e.g., 5(2+3) is evaluated as 5*(2+3)).
-    - Handles scientific functions (e.g., sin, cos, tan, log) and constants (π).
-    - Evaluates boolean equations (e.g., 5+5=10 returns True).
-
-* Input History: Navigate through previous calculations using the ↶ (undo) and ↷ (redo) buttons.
+* **Graphical User Interface (GUI)**: Implemented using PySide6.
+* **Standard Arithmetic**: Supports addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`), and exponentiation (`^`).
+* **Scientific Functions**: Includes `sin()`, `cos()`, `tan()`, `log()`, and `√()` (square root).
+* **Constants**: Provides `π` (Pi) and `e` (Euler's number).
+* **Basic CAS (Computer Algebra System)**: Capable of solving linear equations with a single variable (e.g., `"2*x + 1 = 5"`).
+* **Implicit Multiplication**: Automatically detects and processes inputs such as `"5x"` or `"2(3+1)"` as multiplication.
+* **Input History**: Allows navigation through previous entries using the `↶` (undo) and `↷` (redo) buttons.
 
 ---
-TECHNICAL ARCHITECTURE
----
 
-The application is intentionally decoupled into four distinct Python scripts, each with a specific role.
+## Architecture and File Structure
 
-1. calc.py (Entry Point)
-   - The main bootstrap script.
-   - Its sole responsibility is to launch the main user interface (Ui.py) as a new child process.
+The project is divided into four primary files that communicate via subprocesses. This modular structure enforces a strict separation of concerns between the user interface and the backend logic.
 
-2. Ui.py (User Interface - The "Client")
-   - Manages the entire PySide6 GUI, including window layout, button connections, and display updates.
-   - It captures user input. Upon pressing "Enter" (⏎), it does not perform the calculation itself.
-   - It spawns CalcSmplfd.py as a new subprocess, passing the user's expression as a command-line argument.
-   - It then waits for, captures, and displays the stdout from the child process as the result.
 
-3. CalcSmplfd.py (Core Logic - The "Parsing Service")
-   - This is the "brain" of the operation. It receives the raw expression string from Ui.py.
-   - Tokenizer: The 'translator' function sanitizes and tokenizes the input string.
-   - Sub-process Delegation: When it encounters a scientific function (like sin(...) or log(...)), it delegates this specific task by spawning ScienceCalc.py as another subprocess. It waits for the result (e..g, 0.5) and substitutes it back into its token list.
-   - AST Construction: The 'ast' function builds the Abstract Syntax Tree.
-   - Evaluation: The 'evaluate' method on the final tree node computes the result.
-   - The final result is printed to stdout, which is then read by Ui.py.
 
-4. ScienceCalc.py (Scientific Engine - The "Microservice")
-   - A specialized, single-purpose script that wraps Python's 'math' module.
-   - It accepts a single scientific function string (e.g., "sin(30)", "log(100,10)"), performs the calculation, and prints the result to stdout.
+* **`main.py`**
+    * This is the main entry point for the application. Its sole responsibility is to launch `UI.py` in a separate subprocess.
 
-Data Flow Example (User inputs 5*sin(30))
-------------------------------------------
+* **`UI.py`**
+    * Defines the complete graphical user interface (GUI) using PySide6.
+    * It captures all button inputs and displays them. Upon pressing the "Enter" key (`⏎`), it passes the entire calculation string as an argument to a new subprocess executing `CalcSmplfd.py` and awaits its standard output.
 
-1. User runs python calc.py.
-2. calc.py launches Ui.py.
-3. User types 5*sin(30) into the GUI and presses ⏎.
-4. Ui.py spawns CalcSmplfd.py, passing the string "5*sin(30)".
-5. CalcSmplfd.py tokenizes the string to [5, '*', 'sin(30)'].
-6. When it processes 'sin(30)', it spawns ScienceCalc.py, passing "sin(30)".
-7. ScienceCalc.py computes math.sin(math.radians(30)), gets 0.5, and print(0.5).
-8. CalcSmplfd.py reads the 0.5 from the subprocess's stdout and continues parsing, now with the token list [5, '*', 0.5].
-9. It builds the AST, evaluates it to 2.5, and print(2.5).
-10. Ui.py reads the 2.5 from CalcSmplfd.py's stdout and updates the display.
+* **`CalcSmplfd.py` (Core Calculator Engine)**
+    * This script is the "brain" of the calculator. It operates as a pure command-line script that accepts a single string as input.
+    * **1. Tokenizer (`translator`):** Deconstructs the input string into a list of tokens (e.g., `"5x+1"` becomes `[5.0, '*', 'var0', '+', 1.0]`).
+    * **2. AST Parser (`ast`):** Constructs an Abstract Syntax Tree (AST) from the token list. This tree represents the mathematical structure of the input, respecting the order of operations (e.g., PEMDAS).
+    * **3. Solver / Evaluator:**
+        * **CAS Mode:** If the input is an equation with a variable (e.g., `5*x+1=11`), the `solve()` function is invoked to find the linear solution.
+        * **Standard Mode:** If the input is a standard term (e.g., `5+3*2`), the `evaluate()` function is called to compute the result.
+    * **4. Scientific Sub-processing:** When the tokenizer identifies a scientific function (like `sin(...)` or `log(...)`), it calls `ScienceCalc.py` in *another* subprocess to compute only that specific part.
+    * The final result is sent to standard output via `print()`, which is then read by `UI.py` and displayed to the user.
+
+* **`ScienceCalc.py`**
+    * A specialized helper script dedicated to performing individual scientific calculations (e.g., `math.sin(1.5)` or `math.log(10, 2)`) passed as arguments.
+    * It utilizes Python's `math` library and returns the result via `print()` to its parent process (`CalcSmplfd.py`).
 
 ---
-HOW TO RUN
----
 
-Prerequisites
--------------
+## Requirements
+
 * Python 3.x
 * PySide6
 
-Installation & Launch
----------------------
+The required library can be installed using pip:
 
-1. Clone this repository (or ensure all four .py files are in the same directory).
-
-2. Install the required package:
-   pip install PySide6
-
-3. Run the main application script:
-   python calc.py
-
----
-PROJECT STATUS
----
-60%
-This project is a functional prototype. Several UI buttons (marked with 'x') are placeholders, and scientific functions must be typed manually. The core focus was on building and demonstrating the robust backend architecture and custom parser.
+```bash
+pip install PySide6
