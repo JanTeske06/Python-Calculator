@@ -6,7 +6,10 @@ import subprocess
 import os
 from pathlib import Path
 import time
+import configparser
 
+
+config = Path(__file__).resolve().parent / "config.ini"
 CalcSmplfd = str(Path(__file__).resolve().parent / "CalcSmplfd.py")
 python_interpreter = sys.executable
 
@@ -29,6 +32,59 @@ def Calc(problem):
         return zurueckgeschickter_string
     except subprocess.CalledProcessError as e:
         print(f"Ein Fehler ist aufgetreten: {e}")
+
+
+class SettingsDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Taschenrechner Enistellungen")
+        self.resize(300, 200)
+
+        main_layout = QtWidgets.QVBoxLayout(self)
+
+        self.is_degree_mode_check = QtWidgets.QCheckBox("Winkel in Grad (°)")
+        main_layout.addWidget(self.is_degree_mode_check)
+
+
+        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        main_layout.addWidget(button_box)
+        main_layout.addStretch(1)
+
+        button_box.accepted.connect(self.save_settings)
+        button_box.rejected.connect(self.reject)
+        self.load_current_settings()
+
+    def save_settings(self):
+        is_degree_active = self.is_degree_mode_check.isChecked()
+        config_file = configparser.ConfigParser()
+
+        config_file.read(config, encoding='utf-8')
+
+        if is_degree_active:
+            config_file.set('Scientific_Options', 'use_degrees', 'True')
+        else:
+            config_file.set('Scientific_Options', 'use_degrees', 'False')
+        try:
+            with open(config, 'w', encoding='utf-8') as configfile:
+                config_file.write(configfile)
+            self.accept()
+
+        except Exception as e:
+            print(f"FEHLER beim Speichern: {e}")
+            self.reject()
+
+    def load_current_settings(self):
+        cfg = configparser.ConfigParser()
+        cfg.read(config, encoding='utf-8')
+
+        try:
+            is_active = cfg.getboolean('Scientific_Options', 'use_degrees')
+            self.is_degree_mode_check.setChecked(is_active)
+
+        except (configparser.NoSectionError, configparser.NoOptionError, ValueError):
+            self.is_degree_mode_check.setChecked(False)
+
+
 
 
 class CalculatorPrototype(QtWidgets.QWidget):
@@ -68,7 +124,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
 
         buttons = [
-            ('←', 0, 0), ('→', 0, 1), ('↷', 0, 2), ('↶', 0, 3), ('<', 0, 4),
+            ('⚙️', 0, 0), ('x', 0, 1), ('↷', 0, 2), ('↶', 0, 3), ('<', 0, 4),
 
             ('π', 1, 0), ('e^', 1, 1), ('log(', 1, 2), ('√(', 1, 3), ('/', 1, 4),
 
@@ -89,6 +145,9 @@ class CalculatorPrototype(QtWidgets.QWidget):
             if text == '⏎':
                 # Das Stylesheet setzt die Farbe
                 button.setStyleSheet("background-color: #007bff; color: white; font-weight: bold;")
+
+            if text == '⚙️':
+                button.clicked.connect(self.open_settings)
             button.clicked.connect(lambda checked=False, val=text: self.handle_button_press(val))
             button_grid.addWidget(button, row, col)
 
@@ -108,6 +167,9 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 return
             new_text = current_text[:-1]
             self.display.setText(new_text)
+            return
+
+        elif (value == '⚙️'):
             return
 
         elif value == '⏎':
@@ -154,6 +216,10 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
 
         print(f"Es wurde die Taste '{value}' gedrückt.")
+
+    def open_settings(self):
+        settings_dialog = SettingsDialog(self)
+        settings_dialog.exec()
 
 
 if __name__ == "__main__":
