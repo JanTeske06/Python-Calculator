@@ -1,4 +1,3 @@
-#UI.py
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt
 import sys
@@ -9,8 +8,9 @@ import time
 
 CalcSmplfd = str(Path(__file__).resolve().parent / "CalcSmplfd.py")
 python_interpreter = sys.executable
-history = ["0"]
-history_index = 0
+
+undo = ["0"]
+redo = []
 
 def Calc(problem):
     cmd = [
@@ -92,14 +92,13 @@ class CalculatorPrototype(QtWidgets.QWidget):
             button_grid.addWidget(button, row, col)
 
     def handle_button_press(self, value):
-        global history
-        global history_index
+        global undo
+        global redo
+
         current_text = self.display.text()
 
         if value == 'C':
             self.display.setText("0")
-            self.history_back = ["0"] * 15
-            self.history_forw = [""] * 15
             return
 
         elif (value == '<'):
@@ -124,19 +123,19 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 current_text = ergebnis
 
         elif value == '↶':
-            if history_index > 0:
-                history_index -= 1
-                current_text = history[history_index]
+            if len(undo) > 1:
+                redo.append(undo.pop())
+                current_text = undo[-1]
                 self.display.setText(current_text)
                 print(f"Es wurde die Taste '{value}' gedrückt.")
             return
 
 
+
         elif value == '↷':
-            neuer_index = history_index + 1
-            if neuer_index < len(history) and history[neuer_index] != "":
-                history_index = neuer_index
-                current_text = history[history_index]
+            if len(redo) > 0:
+                undo.append(redo.pop())
+                current_text = undo[-1]
                 self.display.setText(current_text)
                 print(f"Es wurde die Taste '{value}' gedrückt.")
             return
@@ -148,8 +147,10 @@ class CalculatorPrototype(QtWidgets.QWidget):
             current_text += str(value)
 
         self.display.setText(current_text)
-        history.insert(history_index,current_text)
-        history_index +=1
+
+        undo.append(current_text)
+        redo.clear()
+
 
         print(f"Es wurde die Taste '{value}' gedrückt.")
 
