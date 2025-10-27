@@ -107,7 +107,7 @@ class SettingsDialog(QtWidgets.QDialog):
 class CalculatorPrototype(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Taschenrechner Prototyp")
+        self.setWindowTitle("Calculator")
         self.resize(300, 450)
 
         main_v_layout = QtWidgets.QVBoxLayout(self)
