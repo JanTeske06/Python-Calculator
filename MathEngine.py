@@ -19,7 +19,7 @@ var_list = []
 global_subprocess = None
 python_interpreter = sys.executable
 Operations = ["+","-","*","/","=","^"]
-Science_Operations = ["sin","cos","tan","10^x","log","e^(", "π", "√("]
+Science_Operations = ["sin","cos","tan","10^x","log","e^", "π", "√"]
 ScientificEngine = str(Path(__file__).resolve().parent / "ScientificEngine.py")
 Casdir = str(Path(__file__).resolve().parent / "Cas.py")
 
@@ -254,28 +254,65 @@ def translator(problem):
         # elif(current_char) in Science_Operations:
         #     full_problem.append(ScienceCalculator(current_char))
 
+        elif ((((current_char) == 's' or (current_char) == 'c' or (current_char) == 't' or (
+        current_char) == 'l') and problemlength - b >= 5) or
+              (current_char == '√' and problemlength - b >= 2) or
+              (current_char == 'e' and problemlength - b >= 3)):
+
+            if(current_char == '√' and problem[b+1] == '('):
+                full_problem.append('√')
+                full_problem.append('(')
+                b=b+1
+            elif(current_char == 'e' and problem[b+1] == '^'and problem[b+2] == '('):
+                full_problem.append('e^')
+                full_problem.append('(')
+                b=b+2
+
+            elif (current_char in ['s', 'c', 't', 'l'] and len(problem)>=3 and problem[b + 3] == '('):
+
+                if problem[b:b + 3] in ['sin', 'cos', 'tan', 'log']:
+                    full_problem.append(problem[b:b + 3])
+                    full_problem.append('(')
+                    b += 3
 
 
-        elif ((((current_char) == 's' or (current_char) == 'c' or (current_char) == 't' or (current_char) == 'l') and problemlength - b >= 5) or
-              (current_char == '√' and problemlength - b >= 3) or
-              (current_char == 'e' and problemlength - b >= 4)):
 
-            Operation = str(problem[b] + problem[b+1])
 
-            if (Operation in Science_Operations) or (Operation+str(problem[b+2]) in Science_Operations):
-                (ScienceOp, b_neu) = isolate_bracket(problem, b)
-                #print(ScienceOp)
-                b = b_neu
 
-                ergebnis_string = ScienceCalculator(ScienceOp)
 
-                try:
-                    berechneter_wert = float(ergebnis_string)
-                    full_problem.append(berechneter_wert)
 
-                except ValueError:
-                    full_problem.append(ergebnis_string)
-                continue
+
+
+
+
+
+
+
+
+
+
+
+        # elif ((((current_char) == 's' or (current_char) == 'c' or (current_char) == 't' or (current_char) == 'l') and problemlength - b >= 5) or
+        #       (current_char == '√' and problemlength - b >= 3) or
+        #       (current_char == 'e' and problemlength - b >= 4)):
+        #
+        #     Operation = str(problem[b] + problem[b+1])
+        #
+        #     if (Operation in Science_Operations) or (Operation+str(problem[b+2]) in Science_Operations):
+        #
+        #         (ScienceOp, b_neu) = isolate_bracket(problem, b)
+        #         #print(ScienceOp)
+        #         b = b_neu
+        #
+        #         ergebnis_string = ScienceCalculator(ScienceOp)
+        #
+        #         try:
+        #             berechneter_wert = float(ergebnis_string)
+        #             full_problem.append(berechneter_wert)
+        #
+        #         except ValueError:
+        #             full_problem.append(ergebnis_string)
+        #         continue
 
 
 
@@ -376,6 +413,25 @@ def ast(received_string):
                 raise SyntaxError("Fehlende schließende Klammer ')'")
 
             return baum_in_der_klammer
+        elif token in Science_Operations:
+            if token == 'π':
+                ScineceOp = 'π'
+            else:
+                if not tokens or tokens.pop(0) != '(':
+                    raise SyntaxError(f"Fehlende öffnende Klammer nach funktion{token}")
+                innerer_baum = parse_sum(tokens)
+
+                if not tokens or tokens.pop(0) != ')':
+                    raise SyntaxError(f"Fehlende schließende Klammer nach funktion{token}")
+
+                argument_wert = innerer_baum.evaluate()
+                ScienceOp = f"{token}({argument_wert})"
+                ergebnis = ScienceCalculator(ScienceOp)
+                try:
+                    berechneter_wert = float(ergebnis)
+                    return Number(berechneter_wert)
+                except ValueError:
+                    raise SyntaxError(f"Fehler bei wissenschaftlicher Funktion: {ergebnis}")
 
         elif isInt(token):
             return Number(token)
