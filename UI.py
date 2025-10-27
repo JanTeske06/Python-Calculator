@@ -10,7 +10,7 @@ import configparser
 
 
 config = Path(__file__).resolve().parent / "config.ini"
-CalcSmplfd = str(Path(__file__).resolve().parent / "CalcSmplfd.py")
+MathEngine = str(Path(__file__).resolve().parent / "MathEngine.py")
 python_interpreter = sys.executable
 
 undo = ["0"]
@@ -19,7 +19,7 @@ redo = []
 def Calc(problem):
     cmd = [
         python_interpreter,
-        CalcSmplfd,
+        MathEngine,
         problem
     ]
     try:
@@ -126,17 +126,17 @@ class CalculatorPrototype(QtWidgets.QWidget):
         buttons = [
             ('⚙️', 0, 0), ('x', 0, 1), ('↷', 0, 2), ('↶', 0, 3), ('<', 0, 4),
 
-            ('π', 1, 0), ('e^', 1, 1), ('log(', 1, 2), ('√(', 1, 3), ('/', 1, 4),
+            ('π', 1, 0), ('e^(', 1, 1), ('x', 1, 2), ('√(', 1, 3), ('/', 1, 4),
 
-            ('sin(', 2, 0), ('(', 2, 1), (')', 2, 2), ('^', 2, 3), ('*', 2, 4),
+            ('sin(', 2, 0), ('(', 2, 1), (')', 2, 2), ('^(', 2, 3), ('*', 2, 4),
 
             ('cos(', 3, 0),  ('7', 3, 1), ('8', 3, 2), ('9', 3, 3), ('-', 3, 4),
 
             ('tan(', 4, 0), ('4', 4, 1), ('5', 4, 2), ('6', 4, 3), ('+', 4, 4),
 
-            ('x', 5, 0), ('1', 5, 1), ('2', 5, 2), ('3', 5, 3), ('.', 5, 4),
+            ('log(', 5, 0), ('1', 5, 1), ('2', 5, 2), ('3', 5, 3), ('=', 5, 4),
 
-            ('x', 6, 0), ('C', 6, 1), ('0', 6, 2), ('=', 6, 3), ('⏎', 6, 4)
+            ('C', 6, 0), (',', 6, 1), ('0', 6, 2), ('.', 6, 3), ('⏎', 6, 4)
         ]
         for text, row, col in buttons:
             button = QtWidgets.QPushButton(text)
