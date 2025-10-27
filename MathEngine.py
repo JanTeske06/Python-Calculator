@@ -279,7 +279,13 @@ def translator(problem):
                     b += 3
 
 
-
+        elif current_char == 'π':
+                ergebnis_string = ScienceCalculator('π')
+                try:
+                    berechneter_wert = float(ergebnis_string)
+                    full_problem.append(berechneter_wert)
+                except ValueError:
+                    raise ValueError(f"Fehler bei Konstante π: {ergebnis_string}")
 
 
 
@@ -394,14 +400,18 @@ def ast(received_string):
     if global_subprocess == "0":
         print(analysed)
 
-
     def parse_power(tokens):
         aktueller_baum = parse_factor(tokens)
         while tokens and tokens[0] in ("^"):
             operator = tokens.pop(0)
             rechtes_teil = parse_factor(tokens)
-            aktueller_baum = BinOp(aktueller_baum, operator, rechtes_teil)
-
+            if not isinstance(aktueller_baum, Variable) and not isinstance(rechtes_teil, Variable):
+                basis = aktueller_baum.evaluate()
+                exponent = rechtes_teil.evaluate()
+                ergebnis = basis ** exponent
+                aktueller_baum = Number(ergebnis)
+            else:
+                aktueller_baum = BinOp(aktueller_baum, operator, rechtes_teil)
         return aktueller_baum
 
     def parse_factor(tokens):
