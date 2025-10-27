@@ -1,4 +1,4 @@
-# MathEngine
+# MathEngine.py
 import sys
 import math
 from PySide6 import QtWidgets
@@ -8,6 +8,8 @@ import subprocess
 import os
 from pathlib import Path
 import time
+import pickle
+import base64
 
 
 
@@ -17,14 +19,14 @@ var_list = []
 global_subprocess = None
 python_interpreter = sys.executable
 Operations = ["+","-","*","/","=","^"]
-Science_Operations = ["sin","cos","tan","10^x","log","e", "π"]
-ScienceCalc = str(Path(__file__).resolve().parent / "ScienceCalc.py")
+Science_Operations = ["sin","cos","tan","10^x","log","e^(", "π", "√("]
+ScientificEngine = str(Path(__file__).resolve().parent / "ScientificEngine.py")
 Casdir = str(Path(__file__).resolve().parent / "Cas.py")
 
 def ScienceCalculator(problem):
     cmd = [
             python_interpreter,
-            ScienceCalc,
+            ScientificEngine,
             problem
 
     ]
@@ -70,7 +72,7 @@ def isOp(zahl):
         return -1
 
 
-def isolate_SCT(problem, b_anfang):
+def isolate_bracket(problem, b_anfang):
     start = b_anfang
     start_klammer_index = problem.find('(', start)
     if start_klammer_index == -1:
@@ -249,33 +251,59 @@ def translator(problem):
         elif current_char == ")":
             full_problem.append(")")
             
-        elif(current_char) in Science_Operations:
-            full_problem.append(ScienceCalculator(current_char))
+        # elif(current_char) in Science_Operations:
+        #     full_problem.append(ScienceCalculator(current_char))
 
 
-        elif ((current_char) == 's' or (current_char) == 'c' or (current_char) == 't' or (
-        current_char) == 'l') and problemlength - b >= 5:
 
-            if (problem[b + 1] == 'i' and problem[b + 2] == 'n') or (
-                    problem[b + 1] == 'o' and problem[b + 2] == 's') or (
-                    problem[b + 1] == 'a' and problem[b + 2] == 'n') or (
-                    problem[b + 1] == 'o' and problem[b + 2] == 'g'):
+        elif ((((current_char) == 's' or (current_char) == 'c' or (current_char) == 't' or (current_char) == 'l') and problemlength - b >= 5) or
+              (current_char == '√' and problemlength - b >= 3) or
+              (current_char == 'e' and problemlength - b >= 4)):
 
-                (ScienceOp, b_neu) = isolate_SCT(problem, b)
+            Operation = str(problem[b] + problem[b+1])
 
+            if (Operation in Science_Operations) or (Operation+str(problem[b+2]) in Science_Operations):
+                (ScienceOp, b_neu) = isolate_bracket(problem, b)
+                #print(ScienceOp)
                 b = b_neu
 
                 ergebnis_string = ScienceCalculator(ScienceOp)
 
                 try:
-
                     berechneter_wert = float(ergebnis_string)
-
                     full_problem.append(berechneter_wert)
 
                 except ValueError:
                     full_problem.append(ergebnis_string)
                 continue
+
+
+
+
+
+        # elif ((current_char) == 's' or (current_char) == 'c' or (current_char) == 't' or (
+        # current_char) == 'l') and problemlength - b >= 5:
+        #
+        #     if (problem[b + 1] == 'i' and problem[b + 2] == 'n') or (
+        #             problem[b + 1] == 'o' and problem[b + 2] == 's') or (
+        #             problem[b + 1] == 'a' and problem[b + 2] == 'n') or (
+        #             problem[b + 1] == 'o' and problem[b + 2] == 'g'):
+        #
+        #         (ScienceOp, b_neu) = isolate_bracket(problem, b)
+        #
+        #         b = b_neu
+        #
+        #         ergebnis_string = ScienceCalculator(ScienceOp)
+        #
+        #         try:
+        #
+        #             berechneter_wert = float(ergebnis_string)
+        #
+        #             full_problem.append(berechneter_wert)
+        #
+        #         except ValueError:
+        #             full_problem.append(ergebnis_string)
+        #         continue
 
         else:
             if current_char in var_list:
@@ -425,6 +453,15 @@ def solve(baum,var_name):
             return "Keine Lösung"
     return zaehler / nenner
 
+def cleanup(ergebnis):
+    if isinstance(ergebnis, (int, float)):
+        if ergebnis == int(ergebnis):
+            return (int(ergebnis))
+        else:
+            return ergebnis
+    return ergebnis
+
+
 
 def main():
     global global_subprocess, var_counter, var_list
@@ -452,9 +489,16 @@ def main():
                     "FEHLER: Der Solver wurde auf einer Nicht-Gleichung oder der Taschenrechner auf einer Gleichung aufgerufen.")
             return
 
+
+        ergebnis = cleanup(ergebnis)
+
         if global_subprocess == "0":
             variable_name = var_list[0] if var_list else "Ergebnis"
             print(f"Das Ergebnis der Berechnung ist: {variable_name} = {ergebnis}")
+
+        elif cas ==True:
+            print("x = " + str(ergebnis))
+
         else:
             print(ergebnis)
 
@@ -468,6 +512,3 @@ def main():
 if __name__ == "__main__":
     debug = 0  # 1 = activated, 0 = deactivated
     main()
-
-
-
