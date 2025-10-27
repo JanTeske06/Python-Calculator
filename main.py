@@ -4,8 +4,35 @@ import sys
 import os
 from pathlib import Path
 
-UI = str(Path(__file__).resolve().parent / "UI.py")
 python_interpreter = sys.executable
+
+
+UI = Path(__file__).resolve().parent / "UI.py"
+Main = Path(__file__).resolve().parent / "Main.py"
+ScientificEngine = Path(__file__).resolve().parent / "ScientificEngine.py"
+config = Path(__file__).resolve().parent / "config.ini"
+
+def check_files_exist():
+    REQUIRED = [
+        UI,
+        Main,
+        ScientificEngine,
+        config
+    ]
+
+    missing_files = []
+    b = 0
+    while b < len(REQUIRED):
+        current_path = REQUIRED[b]
+        if not current_path.exists():
+            missing_files.append(current_path.name)
+        b+=1
+
+    if missing_files:
+        print("Fehler: Folgende Dateien fehlen:")
+        for file in missing_files:
+            print(f"- {file}")
+        sys.exit(1)
 
 def UICalc():
     cmd = [
@@ -29,4 +56,5 @@ def main():
 
 if __name__ == "__main__":
     debug = 0  # 1 = activated, 0 = deactivated
+    check_files_exist()
     main()
