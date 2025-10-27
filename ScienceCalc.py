@@ -7,11 +7,38 @@ import os
 from pathlib import Path
 import time
 import math
+import configparser
+
+config = Path(__file__).resolve().parent / "config.ini"
 
 
 test = 1
 global_subprocess = 0
+
+
 degree_setting_sincostan= 0 #0 = number, 1 = degrees
+
+
+def settings_load():
+    global degree_setting_sincostan
+    cfg_objekt = configparser.ConfigParser()
+    cfg_objekt.read(config, encoding='utf-8')
+
+
+    try:
+        ist_aktiv = cfg_objekt.getboolean('Scientific_Options', 'use_degrees')
+        if ist_aktiv == True:
+            degree_setting_sincostan = 1
+
+        elif ist_aktiv == False:
+            degree_setting_sincostan = 0
+
+
+    except (configparser.NoSectionError, configparser.NoOptionError, ValueError):
+        degree_setting_sincostan = 0
+        print(f"Wanrung: Konnte nicht die IWnkeleinstellung aus config.ini auslesen. Fehler: {e}")
+
+
 
  
 def isPi():
@@ -108,4 +135,5 @@ def main():
 
 
 if __name__ == "__main__":
+    settings_load()
     main()
