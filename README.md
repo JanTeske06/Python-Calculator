@@ -2,59 +2,68 @@
 
 ## Project Overview
 
-This project is a prototype for a scientific calculator developed in Python. It features a graphical user interface (GUI) built with PySide6 and a custom backend for parsing and evaluating mathematical expressions.
+This is a prototype for a scientific calculator developed in Python. It features a graphical user interface (GUI) built with PySide6 and a custom backend for parsing and evaluating mathematical expressions.
 
-A key characteristic of this project is its architecture, which relies heavily on `subprocess` calls to programmatically decouple the GUI from the core calculation logic.
+A key feature of this project is its multi-process architecture. The user interface, the core logic (parser/solver), and the scientific calculations are split into separate scripts that communicate via `subprocess` calls.
 
 ---
 
-## Features
+## 🚀 Features
 
 * **Graphical User Interface (GUI)**: Implemented using PySide6.
-* **Standard Arithmetic**: Supports addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`), and exponentiation (`^`).
-* **Scientific Functions**: Includes `sin()`, `cos()`, `tan()`, `log()`, and `√()` (square root).
-* **Constants**: Provides `π` (Pi) and `e` (Euler's number).
-* **Basic CAS (Computer Algebra System)**: Capable of solving linear equations with a single variable (e.g., `"2*x + 1 * (3-x) = 5*x+7*x²"`).
-* **Implicit Multiplication**: Automatically detects and processes inputs such as `"5x"` or `"2(3+1)"` as multiplication.
-* **Input History**: Allows navigation through previous entries using the `↶` (undo) and `↷` (redo) buttons.
+* **Standard Arithmetic**: Supports `+`, `-`, `*`, `/`, and `^` (exponentiation).
+* **Scientific Functions**: Includes `sin()`, `cos()`, `tan()`, `log()`, `√()` (square root), and the constants `π` and `e`.
+* **Configurable Angle Units**: A settings menu (⚙️) allows switching between **Degrees** and **Radians** for trigonometric functions. The setting is saved in `config.ini`.
+* **Undo/Redo System**: A robust two-stack system allows for undoing (`↶`) and redoing (`↷`) inputs.
+* **Linear CAS (Computer Algebra System)**: Capable of solving linear equations with a single variable (e.g., `"5*(2x - 3) = 0.5*(x + 10)"`).
+* **Implicit Multiplication**: Automatically detects inputs like `"5x"` or `"2(3+1)"` as multiplication.
+* **Startup Validation**: `main.py` verifies that all required script and configuration files are present before launching.
 
 ---
 
-## Architecture and File Structure
+## 🛠️ Architecture and File Structure
 
-The project is divided into four primary files that communicate via subprocesses. This modular structure enforces a strict separation of concerns between the user interface and the backend logic.
+The project is divided into a chain of subprocesses to ensure a clear separation of concerns.
 
 
 
-* **`main.py`**
-    * This is the main entry point for the application. Its sole responsibility is to launch `UI.py` in a separate subprocess.
+* **`main.py` (The Launcher)**
+    * This is the main entry point for the application.
+    * It first checks if all required files (`UI.py`, `MathEngine.py`, `ScientificEngine.py`, `config.ini`) exist.
+    * Its sole responsibility is to launch `UI.py` in a separate subprocess.
 
-* **`UI.py`**
-    * Defines the complete graphical user interface (GUI) using PySide6.
-    * It captures all button inputs and displays them. Upon pressing the "Enter" key (`⏎`), it passes the entire calculation string as an argument to a new subprocess executing `CalcSmplfd.py` and awaits its standard output.
+* **`UI.py` (The Frontend)**
+    * Defines the entire graphical user interface (GUI) using PySide6.
+    * Includes the `SettingsDialog`, which **writes** to the `config.ini` file.
+    * Manages the Undo/Redo system (using the global lists `undo` and `redo`).
+    * Captures all button inputs.
+    * When a calculation is triggered (`⏎`), it passes the entire input string to a subprocess running `MathEngine.py`.
 
-* **`CalcSmplfd.py` (Core Calculator Engine)**
-    * This script is the "brain" of the calculator. It operates as a pure command-line script that accepts a single string as input.
-    * **1. Tokenizer (`translator`):** Deconstructs the input string into a list of tokens (e.g., `"5x+1"` becomes `[5.0, '*', 'var0', '+', 1.0]`).
-    * **2. AST Parser (`ast`):** Constructs an Abstract Syntax Tree (AST) from the token list. This tree represents the mathematical structure of the input, respecting the order of operations (e.g., PEMDAS).
-    * **3. Solver / Evaluator:**
-        * **CAS Mode:** If the input is an equation with a variable (e.g., `5*x+1=11`), the `solve()` function is invoked to find the linear solution.
-        * **Standard Mode:** If the input is a standard term (e.g., `5+3*2`), the `evaluate()` function is called to compute the result.
-    * **4. Scientific Sub-processing:** When the tokenizer identifies a scientific function (like `sin(...)` or `log(...)`), it calls `ScienceCalc.py` in *another* subprocess to compute only that specific part.
-    * The final result is sent to standard output via `print()`, which is then read by `UI.py` and displayed to the user.
+* **`MathEngine.py` (The Brain / Core Logic)**
+    * This is the core parser and solver, operating as a pure command-line script.
+    * **Tokenizer (`translator`):** Deconstructs the input string into a list of tokens (e.g., `"5x+1"` becomes `[5.0, '*', 'var0', '+', 1.0]`).
+    * **AST Parser (`ast`):** Builds an Abstract Syntax Tree (AST) from the tokens to represent the mathematical structure (i.e., order of operations).
+    * **Solver / Evaluator:**
+        * **CAS Mode:** Solves linear equations (`solve()`).
+        * **Standard Mode:** Evaluates standard expressions (`evaluate()`).
+    * When it encounters a scientific function (e.g., `sin(...)` or `π`), it calls `ScientificEngine.py` in *another* subprocess to compute only that part.
 
-* **`ScienceCalc.py`**
-    * A specialized helper script dedicated to performing individual scientific calculations (e.g., `math.sin(1.5)` or `math.log(10, 2)`) passed as arguments.
-    * It utilizes Python's `math` library and returns the result via `print()` to its parent process (`CalcSmplfd.py`).
+* **`ScientificEngine.py` (The Specialist Engine)**
+    * A specialized helper script that only performs individual scientific calculations (e.g., `math.sin(...)` or `math.log(...)`).
+    * It **reads** the `config.ini` on startup (`settings_load()`) to determine whether to operate in degree or radian mode.
+    * It returns the raw numerical result via `print()` to `MathEngine.py`.
+
+* **`config.ini` (The Configuration File)**
+    * Acts as a simple data store to share settings (like `use_degrees`) between processes.
+    * It is **written** by `UI.py` and **read** by `ScientificEngine.py`.
 
 ---
 
-## Requirements
+## 📋 Requirements
 
 * Python 3.x
 * PySide6
 
-The required library can be installed using pip:
-
+You can install the required library using pip:
 ```bash
 pip install PySide6
