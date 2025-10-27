@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 import time
 import configparser
+import threading
+from PySide6.QtCore import QObject, Signal, QTimer
 
 
 config = Path(__file__).resolve().parent / "config.ini"
@@ -32,6 +34,21 @@ def Calc(problem):
         return zurueckgeschickter_string
     except subprocess.CalledProcessError as e:
         print(f"Ein Fehler ist aufgetreten: {e}")
+
+
+def background_process(current_text):
+    return Calc(current_text)
+
+
+class Worker(QObject):
+    job_finished = Signal(str, str)
+    def __init__ (self,problem):
+        super().__init__()
+        self.daten = problem
+        self.previous = problem
+    def run_Calc(self):
+        ergebnis = Calc(self.daten)
+        self.job_finished.emit(ergebnis, self.previous)
 
 
 class SettingsDialog(QtWidgets.QDialog):
@@ -175,15 +192,12 @@ class CalculatorPrototype(QtWidgets.QWidget):
         elif value == '⏎':
             self.display.setText("...")
             QtWidgets.QApplication.processEvents()
-            ergebnis = Calc(current_text)
-            if ergebnis == "True":
-                current_text =  (ergebnis + "    " + current_text)
-                print(f"Ergebnis: {ergebnis}")
-            elif ergebnis == "False":
-                current_text =  (ergebnis + "    " + current_text)
-                print(f"Ergebnis: {ergebnis}")
-            else:
-                current_text = ergebnis
+            #ergebnis = Calc(current_text)
+            worker_instanz = Worker(current_text)
+            mein_thread = threading.Thread(target=worker_instanz.run_Calc)
+            mein_thread.start()
+            worker_instanz.job_finished.connect(self.Calc_result)
+            return
 
         elif value == '↶':
             if len(undo) > 1:
@@ -221,6 +235,21 @@ class CalculatorPrototype(QtWidgets.QWidget):
         settings_dialog = SettingsDialog(self)
         settings_dialog.exec()
 
+    def Calc_result(self, ergebnis, current_text):
+
+        if ergebnis == "True":
+            current_text = (ergebnis + "    " + current_text)
+            print(f"Ergebnis: {ergebnis}")
+        elif ergebnis == "False":
+            current_text = (ergebnis + "    " + current_text)
+            print(f"Ergebnis: {ergebnis}")
+        else:
+            current_text = ergebnis
+
+        self.display.setText(current_text)
+
+        undo.append(current_text)
+        redo.clear()
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
