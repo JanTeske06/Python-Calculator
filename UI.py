@@ -141,7 +141,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
 
         buttons = [
-            ('⚙️', 0, 0), ('x', 0, 1), ('↷', 0, 2), ('↶', 0, 3), ('<', 0, 4),
+            ('⚙️', 0, 0), ('📋', 0, 1), ('↷', 0, 2), ('↶', 0, 3), ('<', 0, 4),
 
             ('π', 1, 0), ('e^(', 1, 1), ('x', 1, 2), ('√(', 1, 3), ('/', 1, 4),
 
@@ -205,6 +205,20 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 current_text = undo[-1]
                 self.display.setText(current_text)
                 print(f"Es wurde die Taste '{value}' gedrückt.")
+            return
+
+        elif value == '📋':
+            clipboard = QtWidgets.QApplication.clipboard()
+            clipboard_text = clipboard.text()
+            current_text = self.display.text()
+            if clipboard_text:
+                if current_text == "0":
+                    new_text = clipboard_text
+                else:
+                    new_text = current_text + clipboard_text
+                self.display.setText(new_text)
+                undo.append(new_text)
+                redo.clear()
             return
 
 
