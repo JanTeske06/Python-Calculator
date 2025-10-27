@@ -250,6 +250,9 @@ def translator(problem):
 
         elif current_char == ")":
             full_problem.append(")")
+
+        elif current_char == ",":
+            full_problem.append(",")
             
         # elif(current_char) in Science_Operations:
         #     full_problem.append(ScienceCalculator(current_char))
@@ -403,8 +406,6 @@ def ast(received_string):
 
     def parse_factor(tokens):
         token = tokens.pop(0)
-        if debug == 1:
-            print("Currently at:" + str(token) + "in parse_factor")
 
         if token == "(":
             baum_in_der_klammer = parse_sum(tokens)
@@ -413,25 +414,46 @@ def ast(received_string):
                 raise SyntaxError("Fehlende schließende Klammer ')'")
 
             return baum_in_der_klammer
+
         elif token in Science_Operations:
+
             if token == 'π':
-                ScineceOp = 'π'
-            else:
-                if not tokens or tokens.pop(0) != '(':
-                    raise SyntaxError(f"Fehlende öffnende Klammer nach funktion{token}")
-                innerer_baum = parse_sum(tokens)
-
-                if not tokens or tokens.pop(0) != ')':
-                    raise SyntaxError(f"Fehlende schließende Klammer nach funktion{token}")
-
-                argument_wert = innerer_baum.evaluate()
-                ScienceOp = f"{token}({argument_wert})"
+                ScienceOp = 'π'
                 ergebnis = ScienceCalculator(ScienceOp)
+
                 try:
                     berechneter_wert = float(ergebnis)
                     return Number(berechneter_wert)
                 except ValueError:
-                    raise SyntaxError(f"Fehler bei wissenschaftlicher Funktion: {ergebnis}")
+                    raise SyntaxError(f"Fehler bei Konstante π: {ergebnis}")
+
+            else:
+                if not tokens or tokens.pop(0) != '(':
+                    raise SyntaxError(f"Fehlende öffnende Klammer nach Funktion {token}")
+
+                argument_baum = parse_sum(tokens)
+
+                if token == 'log' and tokens and tokens[0] == ',':
+                    tokens.pop(0)
+                    basis_baum = parse_sum(tokens)
+                    if not tokens or tokens.pop(0) != ')':
+                        raise SyntaxError(f"Fehlende schließende Klammer nach Logarithmusbasis.")
+                    argument_wert = argument_baum.evaluate()
+                    basis_wert = basis_baum.evaluate()
+                    ScienceOp = f"{token}({argument_wert},{basis_wert})"
+                else:
+                    if not tokens or tokens.pop(0) != ')':
+                        raise SyntaxError(f"Fehlende schließende Klammer nach Funktion {token}")
+
+                    argument_wert = argument_baum.evaluate()
+                    ScienceOp = f"{token}({argument_wert})"
+                ergebnis_string = ScienceCalculator(ScienceOp)
+                try:
+                    berechneter_wert = float(ergebnis_string)
+                    return Number(berechneter_wert)
+                except ValueError:
+                    raise SyntaxError(f"Fehler bei wissenschaftlicher Funktion: {ergebnis_string}")
+
 
         elif isInt(token):
             return Number(token)
