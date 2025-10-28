@@ -9,8 +9,9 @@ import time
 import math
 import configparser
 
-config = Path(__file__).resolve().parent / "config.ini"
-
+config = Path(__file__).resolve().parent.parent / "config.ini"
+python_interpreter = sys.executable
+config_man = str(Path(__file__).resolve().parent / "config_manager.py")
 
 test = 1
 global_subprocess = 0
@@ -19,24 +20,37 @@ global_subprocess = 0
 degree_setting_sincostan= 0 #0 = number, 1 = degrees
 
 
+def Config_manager(action, section, key_value, new_value):
+    cmd = [
+        python_interpreter,
+        config_man,
+        action,
+        section,
+        key_value,
+        new_value
+    ]
+    try:
+        ergebnis = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            check=True)
+        zurueckgeschickter_string = ergebnis.stdout.strip()
+        zurueckgeschickter_string = ergebnis.stdout.strip()
+        return zurueckgeschickter_string
+    except subprocess.CalledProcessError as e:
+        print(f"Ein Fehler ist aufgetreten: {e}")
+
 def settings_load():
     global degree_setting_sincostan
-    cfg_objekt = configparser.ConfigParser()
-    cfg_objekt.read(config, encoding='utf-8')
-
-
-    try:
-        ist_aktiv = cfg_objekt.getboolean('Scientific_Options', 'use_degrees')
-        if ist_aktiv == True:
-            degree_setting_sincostan = 1
-
-        elif ist_aktiv == False:
-            degree_setting_sincostan = 0
-
-
-    except (configparser.NoSectionError, configparser.NoOptionError, ValueError):
+    response = Config_manager("load", "Scientific_Options", "use_degrees", " ")
+    if response == "True":
+        degree_setting_sincostan = 1
+    elif response == "False":
         degree_setting_sincostan = 0
-        print(f"Wanrung: Konnte nicht die IWnkeleinstellung aus config.ini auslesen. Fehler: {e}")
+    else:
+        print("Fehler beim Einstellungen laden.")
 
 
 
