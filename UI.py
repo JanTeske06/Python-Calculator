@@ -59,8 +59,20 @@ class SettingsDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Taschenrechner Enistellungen")
         self.resize(300, 200)
+        self.setMinimumSize(300, 200)
+        self.setMaximumSize(300, 200)
 
         main_layout = QtWidgets.QVBoxLayout(self)
+
+        row_h_layout = QtWidgets.QHBoxLayout()
+        main_layout.addLayout(row_h_layout)
+        label = QtWidgets.QLabel("Decimal places (min. 2):")
+        self.input_field = QtWidgets.QLineEdit()
+        #self.input_field.setPlaceholderText(str(self.input_field))
+
+        row_h_layout.addWidget(label)
+        row_h_layout.addWidget(self.input_field)
+        row_h_layout.setStretch(1, 1)
 
         self.is_degree_mode_check = QtWidgets.QCheckBox("Winkel in Grad (°)")
         main_layout.addWidget(self.is_degree_mode_check)
@@ -71,14 +83,31 @@ class SettingsDialog(QtWidgets.QDialog):
         main_layout.addStretch(1)
 
         button_box.accepted.connect(self.save_settings)
+
         button_box.rejected.connect(self.reject)
         self.load_current_settings()
 
     def save_settings(self):
         is_degree_active = self.is_degree_mode_check.isChecked()
         config_file = configparser.ConfigParser()
-
         config_file.read(config, encoding='utf-8')
+
+        input_text = self.input_field.text()
+        input = 2
+        if input_text != "":
+            try:
+                input = int(input_text)
+                if input <= 2:
+                    input = 2
+
+            except:
+                input = 2
+
+
+        if config_file.get('Math_Options', 'decimal_places') != str(input):
+            config_file.set('Math_Options', 'decimal_places', str(input))
+
+
 
         if is_degree_active:
             config_file.set('Scientific_Options', 'use_degrees', 'True')
@@ -93,6 +122,8 @@ class SettingsDialog(QtWidgets.QDialog):
             print(f"FEHLER beim Speichern: {e}")
             self.reject()
 
+
+
     def load_current_settings(self):
         cfg = configparser.ConfigParser()
         cfg.read(config, encoding='utf-8')
@@ -100,11 +131,15 @@ class SettingsDialog(QtWidgets.QDialog):
         try:
             is_active = cfg.getboolean('Scientific_Options', 'use_degrees')
             self.is_degree_mode_check.setChecked(is_active)
-
         except (configparser.NoSectionError, configparser.NoOptionError, ValueError):
             self.is_degree_mode_check.setChecked(False)
 
+        try:
+            decimals = cfg.get('Math_Options', 'decimal_places', fallback='2')
+            self.input_field.setPlaceholderText(decimals)
 
+        except (configparser.NoSectionError, configparser.NoOptionError):
+            self.input_field.setText('2')
 
 
 class CalculatorPrototype(QtWidgets.QWidget):
