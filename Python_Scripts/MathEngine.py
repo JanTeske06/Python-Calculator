@@ -599,4 +599,5 @@ def main():
 
 if __name__ == "__main__":
     debug = 0  # 1 = activated, 0 = deactivated
+    #time.sleep(100)
     main()
