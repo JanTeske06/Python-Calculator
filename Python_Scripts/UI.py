@@ -314,7 +314,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
             if marker_to_find != "":
                 try:
                     marker_index = current_text.index(marker_to_find)
-                    start_index = marker_index + 1
+                    start_index = marker_index+1
                     temp_new_text = current_text[start_index:]
                     if temp_new_text.startswith(' '):
                         temp_new_text = temp_new_text[1:]
