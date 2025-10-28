@@ -35,7 +35,9 @@ def Calc(problem):
             cmd,
             capture_output=True,
             text=True,
+            encoding='utf-8',
             check=True)
+        zurueckgeschickter_string = ergebnis.stdout.strip()
         zurueckgeschickter_string = ergebnis.stdout.strip()
         return zurueckgeschickter_string
     except subprocess.CalledProcessError as e:
@@ -275,7 +277,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
         global  first_run
         if first_run == False:
             for button_text, button_instance in self.button_objects.items():
-                experiment = (button_instance.height()/10)*2
+                experiment = (button_instance.height()/8)*2
                 if experiment <= 12:
                     experiment = 12
                 font = button_instance.font()
