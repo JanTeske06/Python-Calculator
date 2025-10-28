@@ -142,7 +142,6 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
         button_grid.setSpacing(0)
         button_grid.setContentsMargins(0, 0, 0, 0)
-        #button_container.setMinimumHeight(0)
 
         for i in range(7):  # vertikal
             button_grid.setRowStretch(i, 1)
@@ -180,9 +179,9 @@ class CalculatorPrototype(QtWidgets.QWidget):
             button_grid.addWidget(button, row, col)
             self.button_objects[text] = button
 
-
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        self.setMinimumSize(400, 540)
         global  first_run
         if first_run == False:
             for button_text, button_instance in self.button_objects.items():
@@ -207,7 +206,6 @@ class CalculatorPrototype(QtWidgets.QWidget):
         current_text = self.display.text()
 
         if value == 'C':
-            first_run = False
             self.display.setText("0")
             return
 
