@@ -20,6 +20,7 @@ redo = []
 buttons = []
 expanding_policy = ""
 first_run = True
+thread_active = False
 
 def Calc(problem):
     cmd = [
@@ -45,13 +46,16 @@ def background_process(current_text):
 
 class Worker(QObject):
     job_finished = Signal(str, str)
+    global thread_active
     def __init__ (self,problem):
         super().__init__()
         self.daten = problem
         self.previous = problem
     def run_Calc(self):
+        global thread_active
         ergebnis = Calc(self.daten)
         self.job_finished.emit(ergebnis, self.previous)
+        thread_active = False
 
 
 class SettingsDialog(QtWidgets.QDialog):
@@ -207,13 +211,13 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 # Das Stylesheet setzt die Farbe
                 button.setStyleSheet("background-color: #007bff; color: white; font-weight: bold;")
 
+
             if text == '⚙️':
                 button.clicked.connect(self.open_settings)
             button.clicked.connect(lambda checked=False, val=text: self.handle_button_press(val))
             button_grid.addWidget(button, row, col)
             self.button_objects[text] = button
 
-    
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.setMinimumSize(400, 540)
@@ -237,6 +241,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
         global undo
         global redo
         global first_run
+        global mein_thread
 
         current_text = self.display.text()
 
@@ -256,9 +261,19 @@ class CalculatorPrototype(QtWidgets.QWidget):
             return
 
         elif value == '⏎':
+            global thread_active
+
+            if thread_active:
+                print("FEHLER: Eine Berechnung läuft bereits!")
+                return
+            else:
+                thread_active = True
+                self.update_return_button()
+
+
             self.display.setText("...")
+            return_button = self.button_objects['⏎']
             QtWidgets.QApplication.processEvents()
-            #ergebnis = Calc(current_text)
             worker_instanz = Worker(current_text)
             mein_thread = threading.Thread(target=worker_instanz.run_Calc)
             mein_thread.start()
@@ -311,12 +326,26 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
         print(f"Es wurde die Taste '{value}' gedrückt.")
 
+
+    def update_return_button(self):
+        global thread_active
+        return_button = self.button_objects.get('⏎')
+        if not return_button:
+            return
+        if thread_active == True:
+            return_button.setStyleSheet("background-color: #FF0000; color: white; font-weight: bold;")
+            return_button.setText("X")
+        elif thread_active == False:
+            return_button.setStyleSheet("background-color: #007bff; color: white; font-weight: bold;")
+            return_button.setText("⏎")
+        return_button.update()
+
     def open_settings(self):
         settings_dialog = SettingsDialog(self)
         settings_dialog.exec()
 
     def Calc_result(self, ergebnis, current_text):
-
+        self.update_return_button()
         if ergebnis == "True":
             current_text = (ergebnis + "    " + current_text)
             print(f"Ergebnis: {ergebnis}")
