@@ -8,8 +8,9 @@ python_interpreter = sys.executable
 
 
 UI = Path(__file__).resolve().parent / "UI.py"
-Main = Path(__file__).resolve().parent / "Main.py"
+MathEngine = Path(__file__).resolve().parent / "MathEngine.py"
 ScientificEngine = Path(__file__).resolve().parent / "ScientificEngine.py"
+config_man = str(Path(__file__).resolve().parent / "config_manager.py")
 config = Path(__file__).resolve().parent.parent / "config.ini"
 icon = Path(__file__).resolve().parent.parent / "icons" / "icon.png"
 
@@ -17,9 +18,10 @@ icon = Path(__file__).resolve().parent.parent / "icons" / "icon.png"
 def check_files_exist():
     REQUIRED = [
         UI,
-        Main,
+        MathEngine,
         ScientificEngine,
         config,
+        config_man,
         icon
     ]
 
