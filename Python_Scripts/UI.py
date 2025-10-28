@@ -197,8 +197,10 @@ class CalculatorPrototype(QtWidgets.QWidget):
         global expanding_policy
         global first_run
         super().__init__()
-        icon = QtGui.QIcon(str(Path(__file__).resolve().parent / "icon.png"))
-        self.setWindowIcon(icon)
+        icon_path = Path(__file__).resolve().parent.parent / "icons" / "icon.png"
+        app_icon = QtGui.QIcon(str(icon_path))
+        self.setWindowIcon(app_icon)
+
         self.button_objects = {}
         self.setWindowTitle("Calculator")
         self.resize(200, 450)
@@ -297,6 +299,24 @@ class CalculatorPrototype(QtWidgets.QWidget):
         global mein_thread
 
         current_text = self.display.text()
+        ungefaehr_zeichen = "\u2248"
+        marker_to_find = ""
+
+        if "=" in current_text:
+            marker_to_find = "="
+        elif ungefaehr_zeichen in current_text:
+            marker_to_find = ungefaehr_zeichen
+
+        if marker_to_find != "":
+            try:
+                marker_index = current_text.index(marker_to_find)
+                start_index = marker_index + 2
+                temp_new_text = current_text[start_index:]
+                if temp_new_text.startswith(' '):
+                    temp_new_text = temp_new_text[1:]
+                current_text = temp_new_text
+            except ValueError:
+                pass
 
         if value == 'C':
             self.display.setText("0")
@@ -464,6 +484,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
         undo.append(current_text)
         redo.clear()
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
