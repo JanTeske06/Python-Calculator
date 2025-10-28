@@ -10,9 +10,9 @@ from pathlib import Path
 import time
 import pickle
 import base64
+import configparser
 
-
-
+rounding = False
 cas = False
 var_counter = 0
 var_list = []
@@ -21,6 +21,7 @@ python_interpreter = sys.executable
 Operations = ["+","-","*","/","=","^"]
 Science_Operations = ["sin","cos","tan","10^x","log","e^", "π", "√"]
 ScientificEngine = str(Path(__file__).resolve().parent / "ScientificEngine.py")
+config = Path(__file__).resolve().parent.parent / "config.ini"
 
 def ScienceCalculator(problem):
     cmd = [
@@ -479,13 +480,43 @@ def solve(baum,var_name):
             return "Keine Lösung"
     return zaehler / nenner
 
+
 def cleanup(ergebnis):
+    global rounding
+    cfg = configparser.ConfigParser()
+    cfg.read(config, encoding='utf-8')
+    try:
+        decimals = cfg.get('Math_Options', 'decimal_places', fallback='2')
+
+    except (configparser.NoSectionError, configparser.NoOptionError):
+        decimals = 2
+
+
     if isinstance(ergebnis, (int, float)):
         if ergebnis == int(ergebnis):
-            return (int(ergebnis))
+            return int(ergebnis)
         else:
+            s_ergebnis = str(ergebnis)
+            if '.' in s_ergebnis:
+                decimal_index = s_ergebnis.find('.')
+                number_of_decimals = len(s_ergebnis) - decimal_index - 1
+
+                if number_of_decimals > int(decimals):
+                    rounding = True
+                    new_number = round(float(ergebnis),int(decimals))
+                    #print(new_number)
+                    ergebnis = new_number
+                elif number_of_decimals == int(decimals):
+                    return ergebnis
+
+                elif number_of_decimals <= int(decimals):
+                    return ergebnis
+
+                return ergebnis
             return ergebnis
     return ergebnis
+
+
 
 
 
@@ -517,16 +548,23 @@ def main():
 
 
         ergebnis = cleanup(ergebnis)
+        ungefaehr_zeichen = "\u2248"
 
         if global_subprocess == "0":
             variable_name = var_list[0] if var_list else "Ergebnis"
             print(f"Das Ergebnis der Berechnung ist: {variable_name} = {ergebnis}")
 
+        elif cas ==True and rounding == True:
+            print(f"x {ungefaehr_zeichen}" + str(ergebnis))
+
         elif cas ==True:
             print("x = " + str(ergebnis))
 
+        elif rounding ==True:
+            print(f"{ungefaehr_zeichen}" + str(ergebnis))
+
         else:
-            print(ergebnis)
+            print("= " + str(ergebnis))
 
 
     except (ValueError, SyntaxError, ZeroDivisionError) as e:
