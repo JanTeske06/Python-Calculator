@@ -306,9 +306,11 @@ def translator(problem):
             nachfolger = full_problem[b + 1]
             einfuegen_noetig = False
 
+            ist_funktionsname = isScOp(nachfolger) != -1
             ist_zahl_oder_variable = isinstance(aktuelles_element, (int, float)) or "var" in str(aktuelles_element)
             ist_klammer_oder_nachfolger = nachfolger == '(' or "var" in str(nachfolger) or isinstance(nachfolger,
-                                                                                                      (int, float))
+                                                                                                      (int,
+                                                                                                       float)) or ist_funktionsname
             ist_kein_operator = aktuelles_element not in Operations and nachfolger not in Operations
 
             if (ist_zahl_oder_variable or aktuelles_element == ')') and \
