@@ -11,7 +11,7 @@ import threading
 from PySide6.QtCore import QObject, Signal, QTimer
 
 
-config = Path(__file__).resolve().parent / "config.ini"
+config = Path(__file__).resolve().parent.parent / "config.ini"
 MathEngine = str(Path(__file__).resolve().parent / "MathEngine.py")
 python_interpreter = sys.executable
 
@@ -234,12 +234,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
         cfg = configparser.ConfigParser()
         cfg.read(config, encoding='utf-8')
 
-        try:
-            darkmode_active = cfg.getboolean('UI', 'darkmode', fallback=False)
-            if darkmode_active == True:
-                print("X")
-        except (configparser.NoSectionError, configparser.NoOptionError):
-            darkmode_active = False
+        
 
         buttons = [
             ('⚙️', 0, 0), ('📋', 0, 1), ('↷', 0, 2), ('↶', 0, 3), ('<', 0, 4),
