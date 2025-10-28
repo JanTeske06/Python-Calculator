@@ -68,7 +68,6 @@ class SettingsDialog(QtWidgets.QDialog):
         main_layout.addLayout(row_h_layout)
         label = QtWidgets.QLabel("Decimal places (min. 2):")
         self.input_field = QtWidgets.QLineEdit()
-        #self.input_field.setPlaceholderText(str(self.input_field))
 
         row_h_layout.addWidget(label)
         row_h_layout.addWidget(self.input_field)
