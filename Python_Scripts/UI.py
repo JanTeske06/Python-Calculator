@@ -426,7 +426,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
         elif darkmode == False:
             for text, button in self.button_objects.items():
                 if text != '⏎':
-                    button.setStyleSheet("")
+                    button.setStyleSheet("font-weight: normal;")
                     button.update()
                 if text == '⏎':
                     return_button = self.button_objects.get('⏎')
