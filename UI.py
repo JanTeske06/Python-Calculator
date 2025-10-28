@@ -1,5 +1,5 @@
 #Ui.py
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtGui
 from PySide6.QtCore import Qt
 import sys
 import subprocess
@@ -21,6 +21,8 @@ buttons = []
 expanding_policy = ""
 first_run = True
 thread_active = False
+darkmode = False
+
 
 def Calc(problem):
     cmd = [
@@ -59,12 +61,15 @@ class Worker(QObject):
 
 
 class SettingsDialog(QtWidgets.QDialog):
+    settings_saved = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Taschenrechner Enistellungen")
+        self.setWindowTitle("Calculator Settings")
         self.resize(300, 200)
         self.setMinimumSize(300, 200)
         self.setMaximumSize(300, 200)
+
 
         main_layout = QtWidgets.QVBoxLayout(self)
 
@@ -80,6 +85,9 @@ class SettingsDialog(QtWidgets.QDialog):
         self.is_degree_mode_check = QtWidgets.QCheckBox("Winkel in Grad (°)")
         main_layout.addWidget(self.is_degree_mode_check)
 
+        self.darkmode = QtWidgets.QCheckBox("Darkmode")
+        main_layout.addWidget(self.darkmode)
+
 
         button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
         main_layout.addWidget(button_box)
@@ -89,9 +97,23 @@ class SettingsDialog(QtWidgets.QDialog):
 
         button_box.rejected.connect(self.reject)
         self.load_current_settings()
+        if darkmode_active:
+            self.setStyleSheet("""
+                        QDialog {background-color: #121212;}
+                        QLabel {color: white;}
+                        QCheckBox {color: white;}
+                        QLineEdit {background-color: #444444;color: white;border: 1px solid #666666;}
+                        QDialogButtonBox QPushButton {background-color: #666666;color: white;}""")
+        else:
+            self.setStyleSheet("")
+
+    # 2e2e2e
+    #121212
 
     def save_settings(self):
         is_degree_active = self.is_degree_mode_check.isChecked()
+        darkmode_active = self.darkmode.isChecked()
+
         config_file = configparser.ConfigParser()
         config_file.read(config, encoding='utf-8')
 
@@ -116,9 +138,17 @@ class SettingsDialog(QtWidgets.QDialog):
             config_file.set('Scientific_Options', 'use_degrees', 'True')
         else:
             config_file.set('Scientific_Options', 'use_degrees', 'False')
+
+        if darkmode_active:
+            config_file.set('UI', 'darkmode', 'True')
+        else:
+            config_file.set('UI', 'darkmode', 'False')
+
+
         try:
             with open(config, 'w', encoding='utf-8') as configfile:
                 config_file.write(configfile)
+            self.settings_saved.emit()
             self.accept()
 
         except Exception as e:
@@ -144,13 +174,24 @@ class SettingsDialog(QtWidgets.QDialog):
         except (configparser.NoSectionError, configparser.NoOptionError):
             self.input_field.setText('2')
 
+        try:
+            darkmode_active = cfg.getboolean('UI', 'darkmode', fallback='False')
+            self.darkmode.setChecked(darkmode_active)
+
+        except (configparser.NoSectionError, configparser.NoOptionError):
+            self.darkmode.setChecked(False)
+
 
 class CalculatorPrototype(QtWidgets.QWidget):
     def __init__(self):
+
+        global darkmode_active
         global buttons
         global expanding_policy
         global first_run
         super().__init__()
+        icon = QtGui.QIcon(str(Path(__file__).resolve().parent / "icon.png"))
+        self.setWindowIcon(icon)
         self.button_objects = {}
         self.setWindowTitle("Calculator")
         self.resize(200, 450)
@@ -185,8 +226,15 @@ class CalculatorPrototype(QtWidgets.QWidget):
             button_grid.setRowStretch(i, 1)
         for j in range(5):  # horizental
             button_grid.setColumnStretch(j, 1)
+        cfg = configparser.ConfigParser()
+        cfg.read(config, encoding='utf-8')
 
-
+        try:
+            darkmode_active = cfg.getboolean('UI', 'darkmode', fallback=False)
+            if darkmode_active == True:
+                print("X")
+        except (configparser.NoSectionError, configparser.NoOptionError):
+            darkmode_active = False
 
         buttons = [
             ('⚙️', 0, 0), ('📋', 0, 1), ('↷', 0, 2), ('↶', 0, 3), ('<', 0, 4),
@@ -212,11 +260,14 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 button.setStyleSheet("background-color: #007bff; color: white; font-weight: bold;")
 
 
-            if text == '⚙️':
+            elif text == '⚙️':
                 button.clicked.connect(self.open_settings)
+
+
             button.clicked.connect(lambda checked=False, val=text: self.handle_button_press(val))
             button_grid.addWidget(button, row, col)
             self.button_objects[text] = button
+            self.update_darkmode()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -340,9 +391,36 @@ class CalculatorPrototype(QtWidgets.QWidget):
             return_button.setText("⏎")
         return_button.update()
 
+    def update_darkmode(self):
+        global  darkmode
+        cfg = configparser.ConfigParser()
+        cfg.read(config, encoding='utf-8')
+
+        try:
+            darkmode = cfg.getboolean('UI', 'darkmode', fallback='False')
+
+        except (configparser.NoSectionError, configparser.NoOptionError):
+            darkmode = False
+
+        if darkmode == True:
+            for text, button in self.button_objects.items():
+                if text != '⏎':
+                    button.setStyleSheet("background-color: #121212; color: white; font-weight: bold;")
+                    button.update()
+            self.setStyleSheet(f"background-color: #121212;")
+            self.display.setStyleSheet("background-color: #121212; color: white; font-weight: bold;")
+
+        elif darkmode == False:
+            for text, button in self.button_objects.items():
+                button.setStyleSheet("")
+                button.update()
+            self.setStyleSheet("")
+            self.display.setStyleSheet("")
+
     def open_settings(self):
         settings_dialog = SettingsDialog(self)
         settings_dialog.exec()
+
 
     def Calc_result(self, ergebnis, current_text):
         self.update_return_button()
