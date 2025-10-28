@@ -17,6 +17,9 @@ python_interpreter = sys.executable
 
 undo = ["0"]
 redo = []
+buttons = []
+expanding_policy = ""
+first_run = True
 
 def Calc(problem):
     cmd = [
@@ -106,20 +109,31 @@ class SettingsDialog(QtWidgets.QDialog):
 
 class CalculatorPrototype(QtWidgets.QWidget):
     def __init__(self):
+        global buttons
+        global expanding_policy
+        global first_run
         super().__init__()
+        self.button_objects = {}
         self.setWindowTitle("Calculator")
-        self.resize(300, 450)
+        self.resize(200, 450)
 
         main_v_layout = QtWidgets.QVBoxLayout(self)
 
+        expanding_policy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Expanding
+        )
         # Display (Stretch 1)
         self.display = QtWidgets.QLineEdit("0")
         self.display.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.display.setReadOnly(True)
         font = self.display.font()
-        font.setPointSize(24)
+        font.setPointSize(46)
         self.display.setFont(font)
+
+        self.display.setSizePolicy(expanding_policy)
         main_v_layout.addWidget(self.display, 1)
+
 
         button_container = QtWidgets.QWidget()
         main_v_layout.addWidget(button_container, 4)
@@ -128,16 +142,13 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
         button_grid.setSpacing(0)
         button_grid.setContentsMargins(0, 0, 0, 0)
+        #button_container.setMinimumHeight(0)
 
         for i in range(7):  # vertikal
             button_grid.setRowStretch(i, 1)
         for j in range(5):  # horizental
             button_grid.setColumnStretch(j, 1)
 
-        expanding_policy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Expanding,
-            QtWidgets.QSizePolicy.Policy.Expanding
-        )
 
 
         buttons = [
@@ -157,8 +168,8 @@ class CalculatorPrototype(QtWidgets.QWidget):
         ]
         for text, row, col in buttons:
             button = QtWidgets.QPushButton(text)
-
             button.setSizePolicy(expanding_policy)
+
             if text == '⏎':
                 # Das Stylesheet setzt die Farbe
                 button.setStyleSheet("background-color: #007bff; color: white; font-weight: bold;")
@@ -167,14 +178,36 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 button.clicked.connect(self.open_settings)
             button.clicked.connect(lambda checked=False, val=text: self.handle_button_press(val))
             button_grid.addWidget(button, row, col)
+            self.button_objects[text] = button
+
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        global  first_run
+        if first_run == False:
+            for button_text, button_instance in self.button_objects.items():
+                experiment = (button_instance.height()/10)*2
+                if experiment <= 12:
+                    experiment = 12
+                font = button_instance.font()
+                font.setPointSize((experiment))
+                button_instance.setFont(font)
+        elif first_run == True:
+            for button_text, button_instance in self.button_objects.items():
+                font = button_instance.font()
+                font.setPointSize((12))
+                button_instance.setFont(font)
+                first_run  = False
 
     def handle_button_press(self, value):
         global undo
         global redo
+        global first_run
 
         current_text = self.display.text()
 
         if value == 'C':
+            first_run = False
             self.display.setText("0")
             return
 
