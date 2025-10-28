@@ -561,7 +561,7 @@ def main():
             print("x = " + str(ergebnis))
 
         elif rounding ==True:
-            print(f"{ungefaehr_zeichen}" + str(ergebnis))
+            print(f"{ungefaehr_zeichen} " + str(ergebnis))
 
         else:
             print("= " + str(ergebnis))
