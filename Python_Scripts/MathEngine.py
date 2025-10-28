@@ -21,7 +21,30 @@ python_interpreter = sys.executable
 Operations = ["+","-","*","/","=","^"]
 Science_Operations = ["sin","cos","tan","10^x","log","e^", "π", "√"]
 ScientificEngine = str(Path(__file__).resolve().parent / "ScientificEngine.py")
+config_man = str(Path(__file__).resolve().parent / "config_manager.py")
 config = Path(__file__).resolve().parent.parent / "config.ini"
+def Config_manager(action, section, key_value, new_value):
+    cmd = [
+        python_interpreter,
+        config_man,
+        action,
+        section,
+        key_value,
+        new_value
+    ]
+    try:
+        ergebnis = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            check=True)
+        zurueckgeschickter_string = ergebnis.stdout.strip()
+        zurueckgeschickter_string = ergebnis.stdout.strip()
+        return zurueckgeschickter_string
+    except subprocess.CalledProcessError as e:
+        print(f"Ein Fehler ist aufgetreten: {e}")
+
 
 def ScienceCalculator(problem):
     cmd = [
@@ -488,23 +511,14 @@ def solve(baum,var_name):
     zaehler = D - B
     if nenner == 0:
         if zaehler == 0:
-            return "Unendlich viele Lösungen"
+            return "Inf. Solutions"
         else:
-            return "Keine Lösung"
+            return "No Solution"
     return zaehler / nenner
 
 
 def cleanup(ergebnis):
-    global rounding
-    cfg = configparser.ConfigParser()
-    cfg.read(config, encoding='utf-8')
-    try:
-        decimals = cfg.get('Math_Options', 'decimal_places', fallback='2')
-
-    except (configparser.NoSectionError, configparser.NoOptionError):
-        decimals = 2
-
-
+    target_decimals = int(Config_manager("load", "Math_Options", "decimal_places", "0"))
     if isinstance(ergebnis, (int, float)):
         if ergebnis == int(ergebnis):
             return int(ergebnis)
@@ -512,23 +526,24 @@ def cleanup(ergebnis):
             s_ergebnis = str(ergebnis)
             if '.' in s_ergebnis:
                 decimal_index = s_ergebnis.find('.')
-                number_of_decimals = len(s_ergebnis) - decimal_index - 1
 
-                if number_of_decimals > int(decimals):
+                actual_decimals = len(s_ergebnis) - decimal_index - 1
+
+                if actual_decimals > target_decimals:
                     rounding = True
-                    new_number = round(float(ergebnis),int(decimals))
-                    #print(new_number)
+                    new_number = round(float(ergebnis), target_decimals)
+
                     ergebnis = new_number
-                elif number_of_decimals == int(decimals):
+
+                elif actual_decimals == target_decimals:
                     return ergebnis
 
-                elif number_of_decimals <= int(decimals):
+                elif actual_decimals <= target_decimals:
                     return ergebnis
 
                 return ergebnis
             return ergebnis
     return ergebnis
-
 
 
 
