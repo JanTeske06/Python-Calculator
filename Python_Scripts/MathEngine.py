@@ -21,7 +21,6 @@ python_interpreter = sys.executable
 Operations = ["+","-","*","/","=","^"]
 Science_Operations = ["sin","cos","tan","10^x","log","e^", "π", "√"]
 ScientificEngine = str(Path(__file__).resolve().parent / "ScientificEngine.py")
-Casdir = str(Path(__file__).resolve().parent / "Cas.py")
 
 def ScienceCalculator(problem):
     cmd = [
@@ -287,69 +286,6 @@ def translator(problem):
                 except ValueError:
                     raise ValueError(f"Fehler bei Konstante π: {ergebnis_string}")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        # elif ((((current_char) == 's' or (current_char) == 'c' or (current_char) == 't' or (current_char) == 'l') and problemlength - b >= 5) or
-        #       (current_char == '√' and problemlength - b >= 3) or
-        #       (current_char == 'e' and problemlength - b >= 4)):
-        #
-        #     Operation = str(problem[b] + problem[b+1])
-        #
-        #     if (Operation in Science_Operations) or (Operation+str(problem[b+2]) in Science_Operations):
-        #
-        #         (ScienceOp, b_neu) = isolate_bracket(problem, b)
-        #         #print(ScienceOp)
-        #         b = b_neu
-        #
-        #         ergebnis_string = ScienceCalculator(ScienceOp)
-        #
-        #         try:
-        #             berechneter_wert = float(ergebnis_string)
-        #             full_problem.append(berechneter_wert)
-        #
-        #         except ValueError:
-        #             full_problem.append(ergebnis_string)
-        #         continue
-
-
-
-
-
-        # elif ((current_char) == 's' or (current_char) == 'c' or (current_char) == 't' or (
-        # current_char) == 'l') and problemlength - b >= 5:
-        #
-        #     if (problem[b + 1] == 'i' and problem[b + 2] == 'n') or (
-        #             problem[b + 1] == 'o' and problem[b + 2] == 's') or (
-        #             problem[b + 1] == 'a' and problem[b + 2] == 'n') or (
-        #             problem[b + 1] == 'o' and problem[b + 2] == 'g'):
-        #
-        #         (ScienceOp, b_neu) = isolate_bracket(problem, b)
-        #
-        #         b = b_neu
-        #
-        #         ergebnis_string = ScienceCalculator(ScienceOp)
-        #
-        #         try:
-        #
-        #             berechneter_wert = float(ergebnis_string)
-        #
-        #             full_problem.append(berechneter_wert)
-        #
-        #         except ValueError:
-        #             full_problem.append(ergebnis_string)
-        #         continue
 
         else:
             if current_char in var_list:
