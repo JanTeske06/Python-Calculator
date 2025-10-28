@@ -13,6 +13,7 @@ from PySide6.QtCore import QObject, Signal, QTimer
 received_result = False
 
 config = Path(__file__).resolve().parent.parent / "config.ini"
+config_man = str(Path(__file__).resolve().parent / "config_manager.py")
 MathEngine = str(Path(__file__).resolve().parent / "MathEngine.py")
 python_interpreter = sys.executable
 
@@ -43,6 +44,31 @@ def Calc(problem):
         return zurueckgeschickter_string
     except subprocess.CalledProcessError as e:
         print(f"Ein Fehler ist aufgetreten: {e}")
+
+
+def Config_manager(action, section, key_value, new_value):
+    cmd = [
+        python_interpreter,
+        config_man,
+        action,
+        section,
+        key_value,
+        new_value
+    ]
+    try:
+        ergebnis = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            check=True)
+        zurueckgeschickter_string = ergebnis.stdout.strip()
+        zurueckgeschickter_string = ergebnis.stdout.strip()
+        return zurueckgeschickter_string
+    except subprocess.CalledProcessError as e:
+        print(f"Ein Fehler ist aufgetreten: {e}")
+
+
 
 
 def background_process(current_text):
@@ -88,6 +114,9 @@ class SettingsDialog(QtWidgets.QDialog):
         self.is_degree_mode_check = QtWidgets.QCheckBox("Winkel in Grad (°)")
         main_layout.addWidget(self.is_degree_mode_check)
 
+        self.after_paste_enter = QtWidgets.QCheckBox("Nach 📋 automatisch Enter")
+        main_layout.addWidget(self.after_paste_enter)
+
         self.darkmode = QtWidgets.QCheckBox("Darkmode")
         main_layout.addWidget(self.darkmode)
 
@@ -106,54 +135,76 @@ class SettingsDialog(QtWidgets.QDialog):
 
     # 2e2e2e
     #121212
+    def load_current_settings(self):
+        def get_setting(section, key):
+            response = Config_manager("load", section, key, "0")
+
+            if response == "-1":
+                return None
+            return response
+
+        decimals_str = get_setting("Math_Options", "decimal_places")
+        if decimals_str is not None:
+            self.input_field.setPlaceholderText(decimals_str)
+        else:
+            self.input_field.setPlaceholderText('2')
+
+        is_degree_active_str = get_setting("Scientific_Options", "use_degrees")
+        if is_degree_active_str == "True":
+            self.is_degree_mode_check.setChecked(True)
+        else:
+            self.is_degree_mode_check.setChecked(False)
+
+
+        after_paste_enter_str = get_setting("UI", "after_paste_enter")
+        if after_paste_enter_str == "True":
+            self.after_paste_enter.setChecked(True)
+        else:
+            self.after_paste_enter.setChecked(False)
+        darkmode_active_str = get_setting("UI", "darkmode")
+        if darkmode_active_str == "True":
+            self.darkmode.setChecked(True)
+        else:
+            self.darkmode.setChecked(False)
+        self.update_darkmode()
 
     def save_settings(self):
         is_degree_active = self.is_degree_mode_check.isChecked()
         darkmode_active = self.darkmode.isChecked()
-
-        config_file = configparser.ConfigParser()
-        config_file.read(config, encoding='utf-8')
+        auto_enter_active = self.after_paste_enter.isChecked()
 
         input_text = self.input_field.text()
-        input = 2
-        if input_text != "":
-            try:
-                input = int(input_text)
-                if input <= 2:
-                    input = 2
+        input_decimals = input_text if input_text else "2"
 
-            except:
-                input = 2
+        erfolgreich_gespeichert = True
 
+        response = Config_manager(
+            "save", "Math_Options", "decimal_places", input_decimals
+        )
+        if response != "1": erfolgreich_gespeichert = False
+        response = Config_manager(
+            "save", "Scientific_Options", "use_degrees", str(is_degree_active)
+        )
+        if response != "1": erfolgreich_gespeichert = False
+        response = Config_manager(
+            "save", "UI", "darkmode", str(darkmode_active)
+        )
+        if response != "1": erfolgreich_gespeichert = False
+        response = Config_manager(
+            "save", "UI", "after_paste_enter", str(auto_enter_active)
+        )
+        if response != "1": erfolgreich_gespeichert = False
 
-        if config_file.get('Math_Options', 'decimal_places') != str(input):
-            config_file.set('Math_Options', 'decimal_places', str(input))
-
-
-
-        if is_degree_active:
-            config_file.set('Scientific_Options', 'use_degrees', 'True')
-        else:
-            config_file.set('Scientific_Options', 'use_degrees', 'False')
-
-        if darkmode_active:
-            config_file.set('UI', 'darkmode', 'True')
-        else:
-            config_file.set('UI', 'darkmode', 'False')
-
-
-        try:
-            with open(config, 'w', encoding='utf-8') as configfile:
-                config_file.write(configfile)
+        if erfolgreich_gespeichert:
             self.settings_saved.emit()
             self.accept()
-
-        except Exception as e:
-            print(f"FEHLER beim Speichern: {e}")
+        else:
+            QtWidgets.QMessageBox.critical(self, "Fehler", "Nicht alle Einstellungen konnten gespeichert werden.")
             self.reject()
 
+
     def update_darkmode(self):
-        if darkmode_active:
+        if Config_manager("load", "UI", "darkmode", "0") == "True":
             self.setStyleSheet("""
                         QDialog {background-color: #121212;}
                         QLabel {color: white;}
@@ -162,31 +213,6 @@ class SettingsDialog(QtWidgets.QDialog):
                         QDialogButtonBox QPushButton {background-color: #666666;color: white;}""")
         else:
             self.setStyleSheet("")
-
-    def load_current_settings(self):
-        global darkmode_active
-        cfg = configparser.ConfigParser()
-        cfg.read(config, encoding='utf-8')
-
-        try:
-            is_active = cfg.getboolean('Scientific_Options', 'use_degrees')
-            self.is_degree_mode_check.setChecked(is_active)
-        except (configparser.NoSectionError, configparser.NoOptionError, ValueError):
-            self.is_degree_mode_check.setChecked(False)
-
-        try:
-            decimals = cfg.get('Math_Options', 'decimal_places', fallback='2')
-            self.input_field.setPlaceholderText(decimals)
-
-        except (configparser.NoSectionError, configparser.NoOptionError):
-            self.input_field.setText('2')
-
-        try:
-            darkmode_active = cfg.getboolean('UI', 'darkmode', fallback='False')
-            self.darkmode.setChecked(darkmode_active)
-
-        except (configparser.NoSectionError, configparser.NoOptionError):
-            self.darkmode.setChecked(False)
 
 
 
@@ -236,8 +262,6 @@ class CalculatorPrototype(QtWidgets.QWidget):
             button_grid.setRowStretch(i, 1)
         for j in range(5):  # horizental
             button_grid.setColumnStretch(j, 1)
-        cfg = configparser.ConfigParser()
-        cfg.read(config, encoding='utf-8')
 
 
 
@@ -373,7 +397,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 if current_text == "0":
                     new_text = clipboard_text
                 else:
-                    new_text = current_text + clipboard_text
+                    new_text =clipboard_text
                 self.display.setText(new_text)
                 undo.append(new_text)
                 redo.clear()
@@ -420,17 +444,8 @@ class CalculatorPrototype(QtWidgets.QWidget):
     def update_darkmode(self):
         global  darkmode
         global thread_active
-        cfg = configparser.ConfigParser()
-        cfg.read(config, encoding='utf-8')
 
-        try:
-            darkmode = cfg.getboolean('UI', 'darkmode', fallback='False')
-
-        except (configparser.NoSectionError, configparser.NoOptionError):
-            darkmode = False
-
-        if darkmode == True:
-            global thread_active
+        if Config_manager("load", "UI", "darkmode", "0") == "True":
             for text, button in self.button_objects.items():
                 if text != '⏎':
                     button.setStyleSheet("background-color: #121212; color: white; font-weight: bold;")
@@ -449,7 +464,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
             self.setStyleSheet(f"background-color: #121212;")
             self.display.setStyleSheet("background-color: #121212; color: white; font-weight: bold;")
 
-        elif darkmode == False:
+        elif Config_manager("load", "UI", "darkmode", "0") == "False":
             for text, button in self.button_objects.items():
                 if text != '⏎':
                     button.setStyleSheet("font-weight: normal;")
