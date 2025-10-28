@@ -97,15 +97,9 @@ class SettingsDialog(QtWidgets.QDialog):
 
         button_box.rejected.connect(self.reject)
         self.load_current_settings()
-        if darkmode_active:
-            self.setStyleSheet("""
-                        QDialog {background-color: #121212;}
-                        QLabel {color: white;}
-                        QCheckBox {color: white;}
-                        QLineEdit {background-color: #444444;color: white;border: 1px solid #666666;}
-                        QDialogButtonBox QPushButton {background-color: #666666;color: white;}""")
-        else:
-            self.setStyleSheet("")
+        self.update_darkmode()
+
+
 
     # 2e2e2e
     #121212
@@ -155,9 +149,19 @@ class SettingsDialog(QtWidgets.QDialog):
             print(f"FEHLER beim Speichern: {e}")
             self.reject()
 
-
+    def update_darkmode(self):
+        if darkmode_active:
+            self.setStyleSheet("""
+                        QDialog {background-color: #121212;}
+                        QLabel {color: white;}
+                        QCheckBox {color: white;}
+                        QLineEdit {background-color: #444444;color: white;border: 1px solid #666666;}
+                        QDialogButtonBox QPushButton {background-color: #666666;color: white;}""")
+        else:
+            self.setStyleSheet("")
 
     def load_current_settings(self):
+        global darkmode_active
         cfg = configparser.ConfigParser()
         cfg.read(config, encoding='utf-8')
 
@@ -180,6 +184,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
         except (configparser.NoSectionError, configparser.NoOptionError):
             self.darkmode.setChecked(False)
+
 
 
 class CalculatorPrototype(QtWidgets.QWidget):
@@ -420,6 +425,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
     def open_settings(self):
         settings_dialog = SettingsDialog(self)
         settings_dialog.exec()
+        self.update_darkmode()
 
 
     def Calc_result(self, ergebnis, current_text):
