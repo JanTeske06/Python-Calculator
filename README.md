@@ -1,69 +1,97 @@
-# Calculator Prototype
+# Advanced Python Calculator
 
-## Project Overview
+A scientific and algebraic desktop calculator built with Python and PySide6. This application features a robust, multi-process architecture to ensure a responsive user interface and separation of concerns between the UI, parsing, and mathematical computation.
 
-This is a prototype for a scientific calculator developed in Python. It features a graphical user interface (GUI) built with PySide6 and a custom backend for parsing and evaluating mathematical expressions.
+## Features
 
-A key feature of this project is its multi-process architecture. The user interface, the core logic (parser/solver), and the scientific calculations are split into separate scripts that communicate via `subprocess` calls.
+  * **Standard Calculator:** Perform all basic arithmetic operations.
+  * **Scientific Functions:** Includes `sin`, `cos`, `tan`, `log`, `√` (sqrt), `e^x`, and the constant `π`.
+  * **Algebraic Solver (CAS):** Solves linear equations (e.g., `2*x + 10 = 20`).
+  * **Persistent Settings:**
+      * **Dark Mode:** Toggle between light and dark themes.
+      * **Angle Mode:** Switch between Degrees and Radians for trigonometric functions.
+      * **Decimal Precision:** Adjust the number of decimal places for the final output.
+  * **Responsive UI:** Uses threading to run complex calculations in the background, preventing the GUI from freezing.
+  * **History:** Undo (`↶`) and Redo (`↷`) functionality.
+  * **Clipboard:** Paste (`📋`) values from the system clipboard.
 
----
+## Architecture
 
-## 🚀 Features
+This project uses a decoupled, multi-process architecture. The main components are launched as separate subprocesses to isolate their work and ensure the UI remains responsive.
 
-* **Graphical User Interface (GUI)**: Implemented using PySide6.
-* **Standard Arithmetic**: Supports `+`, `-`, `*`, `/`, and `^` (exponentiation).
-* **Scientific Functions**: Includes `sin()`, `cos()`, `tan()`, `log()`, `√()` (square root), and the constants `π` and `e`.
-* **Configurable Angle Units**: A settings menu (⚙️) allows switching between **Degrees** and **Radians** for trigonometric functions. The setting is saved in `config.ini`.
-* **Undo/Redo System**: A robust two-stack system allows for undoing (`↶`) and redoing (`↷`) inputs.
-* **Linear CAS (Computer Algebra System)**: Capable of solving linear equations with a single variable (e.g., `"5*(2x - 3) = 0.5*(x + 10)"`).
-* **Implicit Multiplication**: Automatically detects inputs like `"5x"` or `"2(3+1)"` as multiplication.
-* **Startup Validation**: `main.py` verifies that all required script and configuration files are present before launching.
+1.  **`main.py` (Launcher)**
 
----
+      * This is the entry point of the application.
+      * It first validates that all required script files (`UI.py`, `MathEngine.py`, etc.) and assets (`config.ini`, `Top_Left_icon.png`) exist.
+      * It then launches the `UI.py` script as a new process.
 
-## 🛠️ Architecture and File Structure
+2.  **`UI.py` (Frontend)**
 
-The project is divided into a chain of subprocesses to ensure a clear separation of concerns.
+      * This script contains all the PySide6 code for the graphical user interface, including the main window, settings dialog, and all button logic.
+      * It manages the application's state (like undo/redo stacks).
+      * When a calculation is requested (by pressing `⏎`), it creates a `Worker` thread.
+      * This `Worker` thread then calls `MathEngine.py` as a subprocess, passing the user's problem string as an argument. This prevents the UI from freezing during calculation.
 
+3.  **`MathEngine.py` (Core / CAS)**
 
+      * This is the "brain" of the calculator. It receives the raw problem string from `UI.py`.
+      * **Tokenizer/Lexer:** The `translator()` function parses the raw string into a list of tokens (numbers, operators, functions, variables).
+      * **Parser (AST):** The `ast()` function builds an Abstract Syntax Tree (AST) from the token list using classes like `BinOp`, `Number`, and `Variable`.
+      * **Solver:** If the AST is identified as an equation (contains an `=` and a variable), the `solve()` function is used to find the value of the variable.
+      * **Evaluator:** If it's a simple expression, the `evaluate()` method is called on the tree.
+      * **Delegation:** For scientific functions (like `sin` or `log`), this engine launches *another* subprocess, calling `ScientificEngine.py` to get the result.
 
-* **`main.py` (The Launcher)**
-    * This is the main entry point for the application.
-    * It first checks if all required files (`UI.py`, `MathEngine.py`, `ScientificEngine.py`, `config.ini`) exist.
-    * Its sole responsibility is to launch `UI.py` in a separate subprocess.
+4.  **`ScientificEngine.py` (Backend)**
 
-* **`UI.py` (The Frontend)**
-    * Defines the entire graphical user interface (GUI) using PySide6.
-    * Includes the `SettingsDialog`, which **writes** to the `config.ini` file.
-    * Manages the Undo/Redo system (using the global lists `undo` and `redo`).
-    * Captures all button inputs.
-    * When a calculation is triggered (`⏎`), it passes the entire input string to a subprocess running `MathEngine.py`.
+      * This script is a simple, stateless math library.
+      * It reads the `config.ini` file to check for the `use_degrees` setting.
+      * It accepts a single function string (e.g., `sin(30)`), performs the raw `math` library calculation (correctly converting to radians if needed), and prints the numerical result to `stdout`.
 
-* **`MathEngine.py` (The Brain / Core Logic)**
-    * This is the core parser and solver, operating as a pure command-line script.
-    * **Tokenizer (`translator`):** Deconstructs the input string into a list of tokens (e.g., `"5x+1"` becomes `[5.0, '*', 'var0', '+', 1.0]`).
-    * **AST Parser (`ast`):** Builds an Abstract Syntax Tree (AST) from the tokens to represent the mathematical structure (i.e., order of operations).
-    * **Solver / Evaluator:**
-        * **CAS Mode:** Solves linear equations (`solve()`).
-        * **Standard Mode:** Evaluates standard expressions (`evaluate()`).
-    * When it encounters a scientific function (e.g., `sin(...)` or `π`), it calls `ScientificEngine.py` in *another* subprocess to compute only that part.
+## Project Structure
 
-* **`ScientificEngine.py` (The Specialist Engine)**
-    * A specialized helper script that only performs individual scientific calculations (e.g., `math.sin(...)` or `math.log(...)`).
-    * It **reads** the `config.ini` on startup (`settings_load()`) to determine whether to operate in degree or radian mode.
-    * It returns the raw numerical result via `print()` to `MathEngine.py`.
+```
+.
+├── config.ini          # Stores settings (Dark Mode, Degrees/Radians)
+├── README.md           # This file
+├── icons/
+│   └── Top_Left_icon.png # Application icon
+│
+└── Python_Scripts/
+    ├── main.py           # (Launcher) Validates files and starts UI.py
+    ├── UI.py             # (Frontend) All GUI, threading, and settings logic
+    ├── MathEngine.py     # (Core) Parser, AST builder, and Solver (CAS)
+    └── ScientificEngine.py # (Backend) Performs raw scientific math
+```
 
-* **`config.ini` (The Configuration File)**
-    * Acts as a simple data store to share settings (like `use_degrees`) between processes.
-    * It is **written** by `UI.py` and **read** by `ScientificEngine.py`.
+## Getting Started
 
----
+### Prerequisites
 
-## 📋 Requirements
+You must have Python 3 and the PySide6 library installed.
 
-* Python 3.x
-* PySide6
-
-You can install the required library using pip:
 ```bash
 pip install PySide6
+```
+
+### Running the Application
+
+To run the calculator, execute the `main.py` script from the root directory:
+
+```bash
+python Python_Scripts/main.py
+```
+
+## Configuration
+
+Settings are stored in `config.ini` and can be changed by clicking the `⚙️` icon in the app.
+
+  * `[UI]`
+      * `darkmode = True` / `False`: Toggles the dark theme for the UI.
+  * `[Scientific_Options]`
+      * `use_degrees = True` / `False`: Sets angle mode for `sin`, `cos`, and `tan`. `False` defaults to Radians.
+  * `[Math_Options]`
+      * `decimal_places = 2`: Sets the number of decimal places for rounding (Note: UI feature, calculation engine prints full float).
+
+## License
+
+This project is licensed under the MIT License.
