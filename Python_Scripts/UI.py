@@ -10,6 +10,7 @@ import configparser
 import threading
 from PySide6.QtCore import QObject, Signal, QTimer
 
+received_result = False
 
 config = Path(__file__).resolve().parent.parent / "config.ini"
 MathEngine = str(Path(__file__).resolve().parent / "MathEngine.py")
@@ -297,26 +298,29 @@ class CalculatorPrototype(QtWidgets.QWidget):
         global redo
         global first_run
         global mein_thread
-
+        global received_result
         current_text = self.display.text()
-        ungefaehr_zeichen = "\u2248"
-        marker_to_find = ""
 
-        if "=" in current_text:
-            marker_to_find = "="
-        elif ungefaehr_zeichen in current_text:
-            marker_to_find = ungefaehr_zeichen
+        if received_result == True:
+            received_result = False
+            ungefaehr_zeichen = "\u2248"
+            marker_to_find = ""
 
-        if marker_to_find != "":
-            try:
-                marker_index = current_text.index(marker_to_find)
-                start_index = marker_index + 2
-                temp_new_text = current_text[start_index:]
-                if temp_new_text.startswith(' '):
-                    temp_new_text = temp_new_text[1:]
-                current_text = temp_new_text
-            except ValueError:
-                pass
+            if "=" in current_text:
+                marker_to_find = "="
+            elif ungefaehr_zeichen in current_text:
+                marker_to_find = ungefaehr_zeichen
+
+            if marker_to_find != "":
+                try:
+                    marker_index = current_text.index(marker_to_find)
+                    start_index = marker_index + 1
+                    temp_new_text = current_text[start_index:]
+                    if temp_new_text.startswith(' '):
+                        temp_new_text = temp_new_text[1:]
+                    current_text = temp_new_text
+                except ValueError:
+                    pass
 
         if value == 'C':
             self.display.setText("0")
@@ -470,6 +474,8 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
 
     def Calc_result(self, ergebnis, current_text):
+        global received_result
+        received_result = True
         self.update_return_button()
         if ergebnis == "True":
             current_text = (ergebnis + "    " + current_text)
