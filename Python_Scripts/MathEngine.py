@@ -339,23 +339,9 @@ def ast(received_string):
     if global_subprocess == "0":
         print(analysed)
 
-    def parse_power(tokens):
-        aktueller_baum = parse_factor(tokens)
-        while tokens and tokens[0] in ("^"):
-            operator = tokens.pop(0)
-            rechtes_teil = parse_factor(tokens)
-            if not isinstance(aktueller_baum, Variable) and not isinstance(rechtes_teil, Variable):
-                basis = aktueller_baum.evaluate()
-                exponent = rechtes_teil.evaluate()
-                ergebnis = basis ** exponent
-                aktueller_baum = Number(ergebnis)
-            else:
-                aktueller_baum = BinOp(aktueller_baum, operator, rechtes_teil)
-        return aktueller_baum
 
     def parse_factor(tokens):
         token = tokens.pop(0)
-
         if token == "(":
             baum_in_der_klammer = parse_sum(tokens)
 
@@ -416,15 +402,42 @@ def ast(received_string):
         else:
             raise SyntaxError(f"Unerwartetes Token: {token}")
 
+        # NEUE FUNKTION: Behandelt unäre Operatoren (+, -)
 
+    def parse_unary(tokens):
+            if tokens and tokens[0] in ('+', '-'):
+                operator = tokens.pop(0)
+                operand = parse_unary(tokens)
+
+                if operator == '-':
+                    if isinstance(operand, Number):
+                        return Number(-operand.evaluate())
+                    return BinOp(Number(0.0), '-', operand)
+                else:
+                    return operand
+            return parse_power(tokens)
+
+    def parse_power(tokens):
+        aktueller_baum = parse_factor(tokens)
+        while tokens and tokens[0] in ("^"):
+            operator = tokens.pop(0)
+            rechtes_teil = parse_unary(tokens)
+            if not isinstance(aktueller_baum, Variable) and not isinstance(rechtes_teil, Variable):
+                basis = aktueller_baum.evaluate()
+                exponent = rechtes_teil.evaluate()
+                ergebnis = basis ** exponent
+                aktueller_baum = Number(ergebnis)
+            else:
+                aktueller_baum = BinOp(aktueller_baum, operator, rechtes_teil)
+        return aktueller_baum
 
 
     def parse_term(tokens):
 
-        aktueller_baum = parse_power(tokens)
+        aktueller_baum = parse_unary(tokens)
         while tokens and tokens[0] in ("*","/"):
             operator = tokens.pop(0)
-            rechtes_teil = parse_power(tokens)
+            rechtes_teil = parse_unary(tokens)
             aktueller_baum = BinOp(aktueller_baum, operator, rechtes_teil)
 
         return aktueller_baum
@@ -435,7 +448,7 @@ def ast(received_string):
 
         aktueller_baum = parse_term(tokens)
 
-        while tokens and tokens[0] in ("+","-"):
+        while tokens and tokens[0] in ("+", "-"):
 
             operator = tokens.pop(0)
             if debug == 1:
