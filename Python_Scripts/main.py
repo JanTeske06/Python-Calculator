@@ -10,14 +10,17 @@ python_interpreter = sys.executable
 UI = Path(__file__).resolve().parent / "UI.py"
 Main = Path(__file__).resolve().parent / "Main.py"
 ScientificEngine = Path(__file__).resolve().parent / "ScientificEngine.py"
-config = Path(__file__).resolve().parent / "config.ini"
+config = Path(__file__).resolve().parent.parent / "config.ini"
+icon = Path(__file__).resolve().parent.parent / "icons" / "Top_Left_icon.png"
+
 
 def check_files_exist():
     REQUIRED = [
         UI,
         Main,
         ScientificEngine,
-        config
+        config,
+        icon
     ]
 
     missing_files = []
