@@ -214,6 +214,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
             button_grid.addWidget(button, row, col)
             self.button_objects[text] = button
 
+    
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.setMinimumSize(400, 540)
