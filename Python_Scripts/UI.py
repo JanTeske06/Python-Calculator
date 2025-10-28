@@ -393,14 +393,35 @@ class CalculatorPrototype(QtWidgets.QWidget):
             clipboard = QtWidgets.QApplication.clipboard()
             clipboard_text = clipboard.text()
             current_text = self.display.text()
+
             if clipboard_text:
                 if current_text == "0":
                     new_text = clipboard_text
                 else:
-                    new_text =clipboard_text
+                    new_text = current_text + clipboard_text
+                    
                 self.display.setText(new_text)
                 undo.append(new_text)
                 redo.clear()
+
+                response = Config_manager("load", "UI", "after_paste_enter", "0")
+
+                if response == "False":
+                    pass
+                elif response == "True":
+                    if thread_active:
+                        print("FEHLER: Eine Berechnung läuft bereits!")
+                        return
+                    else:
+                        thread_active = True
+                        self.update_return_button()
+                        self.display.setText("...")
+                        worker_instanz = Worker(clipboard_text)
+
+                        mein_thread = threading.Thread(target=worker_instanz.run_Calc)
+                        mein_thread.start()
+                        worker_instanz.job_finished.connect(self.Calc_result)
+
             return
 
 
