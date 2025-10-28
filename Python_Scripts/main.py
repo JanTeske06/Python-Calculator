@@ -11,7 +11,7 @@ UI = Path(__file__).resolve().parent / "UI.py"
 Main = Path(__file__).resolve().parent / "Main.py"
 ScientificEngine = Path(__file__).resolve().parent / "ScientificEngine.py"
 config = Path(__file__).resolve().parent.parent / "config.ini"
-icon = Path(__file__).resolve().parent.parent / "icons" / "Top_Left_icon.png"
+icon = Path(__file__).resolve().parent.parent / "icons" / "icon.png"
 
 
 def check_files_exist():
