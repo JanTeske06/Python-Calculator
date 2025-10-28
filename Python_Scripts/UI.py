@@ -234,7 +234,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
         cfg = configparser.ConfigParser()
         cfg.read(config, encoding='utf-8')
 
-        
+
 
         buttons = [
             ('⚙️', 0, 0), ('📋', 0, 1), ('↷', 0, 2), ('↶', 0, 3), ('<', 0, 4),
@@ -393,6 +393,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
     def update_darkmode(self):
         global  darkmode
+        global thread_active
         cfg = configparser.ConfigParser()
         cfg.read(config, encoding='utf-8')
 
@@ -403,17 +404,40 @@ class CalculatorPrototype(QtWidgets.QWidget):
             darkmode = False
 
         if darkmode == True:
+            global thread_active
             for text, button in self.button_objects.items():
                 if text != '⏎':
                     button.setStyleSheet("background-color: #121212; color: white; font-weight: bold;")
                     button.update()
+                if text == '⏎':
+                    return_button = self.button_objects.get('⏎')
+                    if not return_button:
+                        return
+                    if thread_active == True:
+                        return_button.setStyleSheet("background-color: #FF0000; color: white; font-weight: bold;")
+                        return_button.setText("X")
+                    elif thread_active == False:
+                        return_button.setStyleSheet("background-color: #007bff; color: white; font-weight: bold;")
+                        return_button.setText("⏎")
+
             self.setStyleSheet(f"background-color: #121212;")
             self.display.setStyleSheet("background-color: #121212; color: white; font-weight: bold;")
 
         elif darkmode == False:
             for text, button in self.button_objects.items():
-                button.setStyleSheet("")
-                button.update()
+                if text != '⏎':
+                    button.setStyleSheet("")
+                    button.update()
+                if text == '⏎':
+                    return_button = self.button_objects.get('⏎')
+                    if not return_button:
+                        return
+                    if thread_active == True:
+                        return_button.setStyleSheet("background-color: #FF0000; color: white; font-weight: bold;")
+                        return_button.setText("X")
+                    elif thread_active == False:
+                        return_button.setStyleSheet("background-color: #007bff; color: white; font-weight: bold;")
+                        return_button.setText("⏎")
             self.setStyleSheet("")
             self.display.setStyleSheet("")
 
