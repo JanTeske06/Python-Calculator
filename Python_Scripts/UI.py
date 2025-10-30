@@ -201,7 +201,9 @@ class SettingsDialog(QtWidgets.QDialog):
         self.previous_auto_enter_active = after_paste_enter_str if after_paste_enter_str is not None else "False"
         self.previous_input_text = decimals_str if decimals_str is not None else "2"
 
-        self.update_darkmode()
+
+
+
 
     def save_settings(self):
 
@@ -234,6 +236,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
             elif response == "1":
                 self.previous_darkmode_active = darkmode_active
+                self.update_darkmode()
 
 
         if auto_enter_active != self.previous_auto_enter_active:
@@ -269,7 +272,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
 
     def update_darkmode(self):
-        if Config_manager("load", "UI", "darkmode", "0") == "True":
+        if self.config_handler.load("darkmode") == "True":
             self.setStyleSheet("""
                         QDialog {background-color: #121212;}
                         QLabel {color: white;}
@@ -281,6 +284,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
 
 class CalculatorPrototype(QtWidgets.QWidget):
+    config_handler = Config_Signal()
     def __init__(self):
 
         global darkmode_active
@@ -463,7 +467,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 undo.append(new_text)
                 redo.clear()
 
-                response = Config_manager("load", "UI", "after_paste_enter", "0")
+                response = self.config_handler.load("after_paste_enter")
 
                 if response == "False":
                     pass
@@ -523,7 +527,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
         global darkmode
         global thread_active
 
-        if Config_manager("load", "UI", "darkmode", "0") == "True":
+        if self.config_handler.load("darkmode") == "True":
             for text, button in self.button_objects.items():
                 if text != '⏎':
                     button.setStyleSheet("background-color: #121212; color: white; font-weight: bold;")
@@ -542,7 +546,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
             self.setStyleSheet(f"background-color: #121212;")
             self.display.setStyleSheet("background-color: #121212; color: white; font-weight: bold;")
 
-        elif Config_manager("load", "UI", "darkmode", "0") == "False":
+        elif self.config_handler.load("darkmode") == "False":
             for text, button in self.button_objects.items():
                 if text != '⏎':
                     button.setStyleSheet("font-weight: normal;")
