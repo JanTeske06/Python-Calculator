@@ -21,8 +21,6 @@ python_interpreter = sys.executable
 undo = ["0"]
 redo = []
 buttons = []
-expanding_policy = ""
-first_run = True
 thread_active = False
 darkmode = False
 
@@ -285,12 +283,8 @@ class SettingsDialog(QtWidgets.QDialog):
 class CalculatorPrototype(QtWidgets.QWidget):
     config_handler = Config_Signal()
     display_font_size = 4.8
+    first_run = True
     def __init__(self):
-
-        global darkmode_active
-        global buttons
-        global expanding_policy
-        global first_run
         super().__init__()
 
 
@@ -371,8 +365,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
         super().resizeEvent(event)
 
         self.setMinimumSize(400, 540)
-        global first_run
-        if first_run == False:
+        if self.first_run == False:
             for button_text, button_instance in self.button_objects.items():
                 experiment = (button_instance.height() / 8) * 2
                 if experiment <= 12:
@@ -384,12 +377,12 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
 
 
-        elif first_run == True:
+        elif self.first_run == True:
             for button_text, button_instance in self.button_objects.items():
                 font = button_instance.font()
                 font.setPointSize((12))
                 button_instance.setFont(font)
-                first_run = False
+                self.first_run = False
         self.update_font_size_display()
 
     def handle_button_press(self, value):
@@ -524,7 +517,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
     def update_font_size_display(self):
             current_text = self.display.text()
-            MAX_FONT_SIZE = 46
+            MAX_FONT_SIZE = 60
             MIN_FONT_SIZE = 10
 
             self.display.setText(current_text)
