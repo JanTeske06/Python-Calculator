@@ -10,6 +10,8 @@ import configparser
 import threading
 from PySide6.QtCore import QObject, Signal, QTimer
 import json
+from pynput.keyboard import Controller
+import pyperclip
 
 received_result = False
 
@@ -79,6 +81,9 @@ def background_process(current_text):
     return Calc(current_text)
 
 
+def is_shift_pressed():
+    tastatur_controller = Controller()
+    return tastatur_controller.shift_pressed
 class Worker(QObject):
     job_finished = Signal(str, str)
     global thread_active
@@ -147,6 +152,9 @@ class SettingsDialog(QtWidgets.QDialog):
         self.darkmode = QtWidgets.QCheckBox("Darkmode")
         main_layout.addWidget(self.darkmode)
 
+        self.shift_to_copy = QtWidgets.QCheckBox("Shift + 📋 to copy")
+        main_layout.addWidget(self.shift_to_copy)
+
         button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
         main_layout.addWidget(button_box)
         main_layout.addStretch(1)
@@ -191,12 +199,18 @@ class SettingsDialog(QtWidgets.QDialog):
         darkmode_active_str = get_setting("darkmode")
         if str(darkmode_active_str) == "True":
             self.darkmode.setChecked(True)
+
         elif str(darkmode_active_str) == "False":
             self.darkmode.setChecked(False)
+
+        shift_copy_active_str = get_setting("shift_to_copy")
+        if str(shift_copy_active_str) == "True":
+            self.shift_to_copy.setChecked(True)
 
         self.previous_is_degree_active = is_degree_active_str if is_degree_active_str is not None else "False"
         self.previous_darkmode_active = darkmode_active_str if darkmode_active_str is not None else "False"
         self.previous_auto_enter_active = after_paste_enter_str if after_paste_enter_str is not None else "False"
+        self.previous_shift_copy_active = shift_copy_active_str if shift_copy_active_str is not None else "False"
         self.previous_input_text = decimals_str if decimals_str is not None else "2"
 
 
@@ -208,6 +222,7 @@ class SettingsDialog(QtWidgets.QDialog):
         is_degree_active = str(self.is_degree_mode_check.isChecked())
         darkmode_active = str(self.darkmode.isChecked())
         auto_enter_active = str(self.after_paste_enter.isChecked())
+        shift_copy_active = str(self.shift_to_copy.isChecked())
 
         input_text = self.input_field.text()
         input_decimals = input_text if input_text else "2"
@@ -245,6 +260,16 @@ class SettingsDialog(QtWidgets.QDialog):
                 error_message = error_message + " / Enter after Paste"
             elif response == "1":
                 self.previous_auto_enter_active = auto_enter_active
+
+
+        if shift_copy_active != self.previous_shift_copy_active:
+            response = self.config_handler.save("UI","shift_to_copy", str(shift_copy_active))
+            if response != "1" and not response == "":
+                erfolgreich_gespeichert = False
+                print("Fehler beim speichern")
+                error_message = error_message + " / Shift + Copy"
+            elif response == "1":
+                self.previous_shift_copy_active = shift_copy_active
 
         if input_decimals != self.previous_input_text:
             response = self.config_handler.save("Math_Options", "decimal_places", str(input_decimals))
@@ -284,6 +309,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
     config_handler = Config_Signal()
     display_font_size = 4.8
     first_run = True
+    shift_is_held = False
     def __init__(self):
         super().__init__()
 
@@ -385,6 +411,18 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 self.first_run = False
         self.update_font_size_display()
 
+
+
+    def keyPressEvent(self, event):
+            if event.key() == Qt.Key.Key_Shift or event.key() == Qt.Key.Key_Shift_L or event.key() == Qt.Key.Key_Shift_R:
+                self.shift_is_held = True
+            super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+            if event.key() == Qt.Key.Key_Shift or event.key() == Qt.Key.Key_Shift_L or event.key() == Qt.Key.Key_Shift_R:
+                self.shift_is_held = False
+            super().keyReleaseEvent(event)
+
     def handle_button_press(self, value):
         global undo
         global redo
@@ -457,39 +495,56 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 print(f"Es wurde die Taste '{value}' gedrückt.")
 
         elif value == '📋':
-            clipboard = QtWidgets.QApplication.clipboard()
-            clipboard_text = clipboard.text()
-            current_text = self.display.text()
+            if self.shift_is_held and self.config_handler.load("shift_to_copy") == "True":
 
-            if clipboard_text:
-                if current_text == "0":
-                    new_text = clipboard_text
-                else:
-                    new_text = current_text + clipboard_text
+                if '=' in current_text:
 
-                self.display.setText(new_text)
-                undo.append(new_text)
-                redo.clear()
+                    equal = current_text.index("=")
+                    copy_text = current_text[:equal] +  current_text[equal+1:]
+                    pyperclip.copy(copy_text)
+                    gepruefter_inhalt = pyperclip.paste()
 
-                response = self.config_handler.load("after_paste_enter")
-
-                if response == "False":
-                    pass
-                elif response == "True":
-                    if thread_active:
-                        print("FEHLER: Eine Berechnung läuft bereits!")
-                        return
+                    if gepruefter_inhalt == copy_text:
+                        print(f"✅ ERFOLG: '{copy_text}' wurde in die Zwischenablage kopiert.")
                     else:
-                        thread_active = True
-                        self.update_return_button()
-                        self.display.setText("...")
-                        worker_instanz = Worker(clipboard_text)
+                        print("❌ FEHLER: Copy-Befehl war nicht erfolgreich.")
+                else:
+                    pyperclip.copy(current_text)
 
-                        mein_thread = threading.Thread(target=worker_instanz.run_Calc)
-                        mein_thread.start()
-                        worker_instanz.job_finished.connect(self.Calc_result)
+            else:
+                clipboard = QtWidgets.QApplication.clipboard()
+                clipboard_text = clipboard.text()
+                current_text = self.display.text()
 
-            return
+                if clipboard_text:
+                    if current_text == "0":
+                        new_text = clipboard_text
+                    else:
+                        new_text = current_text + clipboard_text
+
+                    self.display.setText(new_text)
+                    undo.append(new_text)
+                    redo.clear()
+
+                    response = self.config_handler.load("after_paste_enter")
+
+                    if response == "False":
+                        pass
+                    elif response == "True":
+                        if thread_active:
+                            print("FEHLER: Eine Berechnung läuft bereits!")
+                            return
+                        else:
+                            thread_active = True
+                            self.update_return_button()
+                            self.display.setText("...")
+                            worker_instanz = Worker(clipboard_text)
+
+                            mein_thread = threading.Thread(target=worker_instanz.run_Calc)
+                            mein_thread.start()
+                            worker_instanz.job_finished.connect(self.Calc_result)
+
+                return
 
 
         elif value == '↷':
@@ -501,7 +556,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
 
         else:
-            if current_text == "0":
+            if current_text == "0"and value != ".":
                 current_text = ""
             current_text += str(value)
             self.display.setText(current_text)
@@ -607,7 +662,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
                         return_button.setStyleSheet("background-color: #007bff; color: white; font-weight: bold;")
                         return_button.setText("⏎")
             self.setStyleSheet("")
-            self.display.setStyleSheet("")
+            self.display.setStyleSheet("font-weight: bold;")
 
     def open_settings(self):
         settings_dialog = SettingsDialog(self)
