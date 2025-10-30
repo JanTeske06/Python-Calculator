@@ -529,29 +529,42 @@ def solve(baum,var_name):
     return zaehler / nenner
 
 
+
+
 def cleanup(ergebnis):
-    target_decimals = int(Config_manager("load", "Math_Options", "decimal_places", "0"))
-    if isinstance(ergebnis, (int, float)):
+    global rounding
+    target_decimals_str = Config_manager("load", "Math_Options", "decimal_places", "0")
+    try:
+        target_decimals = int(target_decimals_str)
+    except ValueError:
+        target_decimals = 2
+
+    if isinstance(ergebnis, Decimal):
+
+        if target_decimals >= 0:
+            rundungs_muster = Decimal('1e-' + str(target_decimals))
+        else:
+            rundungs_muster = Decimal('1')
+
+        gerundetes_ergebnis = ergebnis.quantize(rundungs_muster)
+        if gerundetes_ergebnis != ergebnis:
+            rounding = True
+
+        return gerundetes_ergebnis
+
+    elif isinstance(ergebnis, (int, float)):
         if ergebnis == int(ergebnis):
             return int(ergebnis)
+
         else:
             s_ergebnis = str(ergebnis)
             if '.' in s_ergebnis:
                 decimal_index = s_ergebnis.find('.')
-
                 actual_decimals = len(s_ergebnis) - decimal_index - 1
-
                 if actual_decimals > target_decimals:
                     rounding = True
-                    new_number = round(float(ergebnis), target_decimals)
-
-                    ergebnis = new_number
-
-                elif actual_decimals == target_decimals:
-                    return ergebnis
-
-                elif actual_decimals <= target_decimals:
-                    return ergebnis
+                    new_number = round(ergebnis, target_decimals)
+                    return new_number
 
                 return ergebnis
             return ergebnis
