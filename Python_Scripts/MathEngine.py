@@ -23,6 +23,9 @@ Science_Operations = ["sin","cos","tan","10^x","log","e^", "π", "√"]
 ScientificEngine = str(Path(__file__).resolve().parent / "ScientificEngine.py")
 config_man = str(Path(__file__).resolve().parent / "config_manager.py")
 config = Path(__file__).resolve().parent.parent / "config.ini"
+
+
+
 def Config_manager(action, section, key_value, new_value):
     cmd = [
         python_interpreter,
@@ -243,12 +246,12 @@ def translator(problem):
 
         current_char = problem[b]
 
-        if isInt(current_char):
+        if isInt(current_char) or(b>= 0 and current_char == "."):
             str_number = current_char
-            hat_schon_komma = False  
+            hat_schon_komma = False
 
             while (b + 1 < problemlength) and (isInt(problem[b + 1]) or problem[b + 1] == "."):
-
+                print("x")
                 if problem[b + 1] == ".":
                     if hat_schon_komma:
                         raise SyntaxError("Doppeltes Kommazeichen.")
@@ -276,7 +279,7 @@ def translator(problem):
 
         elif current_char == ",":
             full_problem.append(",")
-            
+
         # elif(current_char) in Science_Operations:
         #     full_problem.append(ScienceCalculator(current_char))
 
@@ -359,6 +362,17 @@ def translator(problem):
 def ast(received_string):
     global cas
     analysed = translator(received_string)
+
+    if analysed and analysed[0] == "=":
+        analysed.pop(0)
+        if global_subprocess == "0":
+            print("Gleichheitszeichen am Anfang entfernt.")
+
+    if analysed and analysed[-1] == "=":
+        analysed.pop()
+        if global_subprocess == "0":
+            print("Gleichheitszeichen am Ende entfernt.")
+
     if global_subprocess == "0":
         print(analysed)
 
