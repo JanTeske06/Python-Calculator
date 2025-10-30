@@ -238,11 +238,10 @@ def translator(problem):
     global var_counter
     global var_list
     var_list = [None] * len(problem)
-    problemlength = len(problem)
     full_problem = []
     b = 0
 
-    while b < problemlength:
+    while b < len(problem):
 
         current_char = problem[b]
 
@@ -250,8 +249,7 @@ def translator(problem):
             str_number = current_char
             hat_schon_komma = False
 
-            while (b + 1 < problemlength) and (isInt(problem[b + 1]) or problem[b + 1] == "."):
-                print("x")
+            while (b + 1 <len(problem)) and (isInt(problem[b + 1]) or problem[b + 1] == "."):
                 if problem[b + 1] == ".":
                     if hat_schon_komma:
                         raise SyntaxError("Doppeltes Kommazeichen.")
@@ -284,9 +282,9 @@ def translator(problem):
         #     full_problem.append(ScienceCalculator(current_char))
 
         elif ((((current_char) == 's' or (current_char) == 'c' or (current_char) == 't' or (
-        current_char) == 'l') and problemlength - b >= 5) or
-              (current_char == '√' and problemlength - b >= 2) or
-              (current_char == 'e' and problemlength - b >= 3)):
+        current_char) == 'l') and len(problem) - b >= 5) or
+              (current_char == '√' and len(problem) - b >= 2) or
+              (current_char == 'e' and len(problem) - b >= 3)):
 
             if(current_char == '√' and problem[b+1] == '('):
                 full_problem.append('√')
