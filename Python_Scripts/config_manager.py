@@ -24,7 +24,8 @@ def load_settings(section, key_value):
             "use_degrees": cfg_instance.get("Scientific_Options", "use_degrees"),
             "decimal_places": cfg_instance.get("Math_Options", "decimal_places"),
             "darkmode": cfg_instance.get("UI", "darkmode"),
-            "after_paste_enter": cfg_instance.get("UI", "after_paste_enter")
+            "after_paste_enter": cfg_instance.get("UI", "after_paste_enter"),
+            "shift_to_copy": cfg_instance.get("UI", "shift_to_copy")
         }
         print(json.dumps(config_data))
 
@@ -56,7 +57,7 @@ def save_settings(key_value, new_value):
             else:
                 success = False
 
-    elif key_value == "darkmode" or key_value == "after_paste_enter":
+    elif key_value == "darkmode" or key_value == "after_paste_enter" or key_value == "shift_to_copy":
             if new_value in ("True", "False"):
                 config_file.set('UI', key_value, str(new_value))
                 success = True
