@@ -11,6 +11,8 @@ import time
 import pickle
 import base64
 import configparser
+from decimal import Decimal
+
 
 rounding = False
 cas = False
@@ -116,7 +118,7 @@ def isolate_bracket(problem, b_anfang):
 
 class Number:
     def __init__(self, value):
-        self.value = float(value)
+        self.value = Decimal(value)
 
     def evaluate(self):
         return self.value
@@ -258,10 +260,9 @@ def translator(problem):
                 b += 1
                 str_number += problem[b]
 
-            if isfloat(str_number):
-                full_problem.append(float(str_number))
-            else:
-                full_problem.append(int(str_number))
+            if isfloat(str_number) or isInt(str_number):
+                #full_problem.append(float(str_number))
+                full_problem.append(Decimal(str_number))
 
         elif isOp(current_char) != -1:
             full_problem.append(current_char)
@@ -360,7 +361,6 @@ def translator(problem):
 def ast(received_string):
     global cas
     analysed = translator(received_string)
-
     if analysed and analysed[0] == "=":
         analysed.pop(0)
         if global_subprocess == "0":
@@ -556,7 +556,6 @@ def cleanup(ergebnis):
                 return ergebnis
             return ergebnis
     return ergebnis
-
 
 
 
