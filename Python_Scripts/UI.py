@@ -497,17 +497,11 @@ class CalculatorPrototype(QtWidgets.QWidget):
         elif value == '📋':
             if self.shift_is_held and self.config_handler.load("shift_to_copy") == "True":
 
-                if '=' in current_text:
+                if '=' in current_text and not 'x' in current_text:
 
                     equal = current_text.index("=")
                     copy_text = current_text[:equal] +  current_text[equal+1:]
                     pyperclip.copy(copy_text)
-                    gepruefter_inhalt = pyperclip.paste()
-
-                    if gepruefter_inhalt == copy_text:
-                        print(f"✅ ERFOLG: '{copy_text}' wurde in die Zwischenablage kopiert.")
-                    else:
-                        print("❌ FEHLER: Copy-Befehl war nicht erfolgreich.")
                 else:
                     pyperclip.copy(current_text)
 
@@ -686,6 +680,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
         undo.append(current_text)
         redo.clear()
+        self.update_font_size_display()
 
 
 if __name__ == "__main__":
