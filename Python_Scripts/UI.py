@@ -381,9 +381,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 font.setPointSize((experiment))
                 button_instance.setFont(font)
 
-            font = self.display.font()
-            font.setPointSize((self.display.height() / self.display_font_size) * 2)
-            self.display.setFont(font)
+
 
 
         elif first_run == True:
@@ -392,6 +390,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 font.setPointSize((12))
                 button_instance.setFont(font)
                 first_run = False
+        self.update_font_size_display()
 
     def handle_button_press(self, value):
         global undo
@@ -424,16 +423,16 @@ class CalculatorPrototype(QtWidgets.QWidget):
                     pass
 
         if value == 'C':
-            self.display.setText("0")
-            return
+            current_text = "0"
+            self.display.setText(current_text)
 
         elif (value == '<'):
             if len(current_text) <= 1 or current_text == "0":
-                self.display.setText("0")
+                current_text = "0"
+                self.display.setText(current_text)
                 return
-            new_text = current_text[:-1]
-            self.display.setText(new_text)
-            return
+            current_text = current_text[:-1]
+            self.display.setText(current_text)
 
         elif (value == '⚙️'):
             return
@@ -463,7 +462,6 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 current_text = undo[-1]
                 self.display.setText(current_text)
                 print(f"Es wurde die Taste '{value}' gedrückt.")
-            return
 
         elif value == '📋':
             clipboard = QtWidgets.QApplication.clipboard()
@@ -507,57 +505,62 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 current_text = undo[-1]
                 self.display.setText(current_text)
                 print(f"Es wurde die Taste '{value}' gedrückt.")
-            return
 
 
         else:
             if current_text == "0":
                 current_text = ""
             current_text += str(value)
+            self.display.setText(current_text)
 
-        MAX_FONT_SIZE = 46
-        MIN_FONT_SIZE = 10
-        
-        self.display.setText(current_text)
+        self.update_font_size_display()
 
 
-        font = self.display.font()
-        aktuelle_groesse = font.pointSize()
-        fm = QtGui.QFontMetrics(font)
-
-
-        r_margin = self.display.textMargins().right()
-        l_margin = self.display.textMargins().left()
-        padding = l_margin + r_margin + 5
-        verfuegbare_breite = self.display.width() - padding
-
-        text_breite = fm.horizontalAdvance(current_text)
-
-        while text_breite > verfuegbare_breite and aktuelle_groesse > MIN_FONT_SIZE:
-            aktuelle_groesse -= 1
-            font.setPointSize(aktuelle_groesse)
-            fm = QtGui.QFontMetrics(font)
-            text_breite = fm.horizontalAdvance(current_text)
-
-        temp_size = aktuelle_groesse
-
-        while temp_size < MAX_FONT_SIZE:
-            temp_size += 1
-            font.setPointSize(temp_size)
-            fm_temp = QtGui.QFontMetrics(font)
-            text_breite_temp = fm_temp.horizontalAdvance(current_text)
-            if text_breite_temp <= verfuegbare_breite:
-                aktuelle_groesse = temp_size
-            else:
-                temp_size -= 1
-                break
-        font.setPointSize(aktuelle_groesse)
-        self.display.setFont(font)
-
-        undo.append(current_text)
-        redo.clear()
+        if value != '↶' and value != '↷' and value != '📋':
+            undo.append(current_text)
+            redo.clear()
 
         print(f"Es wurde die Taste '{value}' gedrückt.")
+
+    def update_font_size_display(self):
+            current_text = self.display.text()
+            MAX_FONT_SIZE = 46
+            MIN_FONT_SIZE = 10
+
+            self.display.setText(current_text)
+
+            font = self.display.font()
+            aktuelle_groesse = font.pointSize()
+            fm = QtGui.QFontMetrics(font)
+
+            r_margin = self.display.textMargins().right()
+            l_margin = self.display.textMargins().left()
+            padding = l_margin + r_margin + 5
+            verfuegbare_breite = self.display.width() - padding
+
+            text_breite = fm.horizontalAdvance(current_text)
+
+            while text_breite > verfuegbare_breite and aktuelle_groesse > MIN_FONT_SIZE:
+                aktuelle_groesse -= 1
+                font.setPointSize(aktuelle_groesse)
+                fm = QtGui.QFontMetrics(font)
+                text_breite = fm.horizontalAdvance(current_text)
+
+            temp_size = aktuelle_groesse
+
+            while temp_size < MAX_FONT_SIZE:
+                temp_size += 1
+                font.setPointSize(temp_size)
+                fm_temp = QtGui.QFontMetrics(font)
+                text_breite_temp = fm_temp.horizontalAdvance(current_text)
+                if text_breite_temp <= verfuegbare_breite:
+                    aktuelle_groesse = temp_size
+                else:
+                    temp_size -= 1
+                    break
+            font.setPointSize(aktuelle_groesse)
+            self.display.setFont(font)
+
 
     def update_return_button(self):
         global thread_active
