@@ -1,4 +1,4 @@
-#Ui.py
+# Ui.py
 from PySide6 import QtWidgets, QtGui
 from PySide6.QtCore import Qt
 import sys
@@ -24,7 +24,7 @@ buttons = []
 expanding_policy = ""
 first_run = True
 thread_active = False
-
+darkmode = False
 
 def boolean(value):
     if value == "True":
@@ -33,7 +33,6 @@ def boolean(value):
         return False
     else:
         return "-1"
-
 
 def Calc(problem):
     cmd = [
@@ -76,9 +75,6 @@ def Config_manager(action, section, key_value, new_value):
         return zurueckgeschickter_string
     except subprocess.CalledProcessError as e:
         print(f"Ein Fehler ist aufgetreten: {e}")
-        return "{}"
-
-
 
 
 def background_process(current_text):
@@ -88,10 +84,12 @@ def background_process(current_text):
 class Worker(QObject):
     job_finished = Signal(str, str)
     global thread_active
-    def __init__ (self,problem):
+
+    def __init__(self, problem):
         super().__init__()
         self.daten = problem
         self.previous = problem
+
     def run_Calc(self):
         global thread_active
         ergebnis = Calc(self.daten)
@@ -99,101 +97,37 @@ class Worker(QObject):
         thread_active = False
 
 
-class Config_Signals(QObject):
-    setting_changed = Signal(str, str)
-    all_settings_loaded = Signal(dict)
-    ergebnis = dict
+
+class Config_Signal(QObject):
+    all_settings = dict
     def __init__(self):
+        global all_settings
         super().__init__()
-        pass
+        all_settings = json.loads(Config_manager("load", "all", "0", "0"))
+        print(all_settings)
+    def load(self, key_value):
+        return all_settings[str(key_value)]
+    def save(self, section, key_value, new_value):
+        return (Config_manager("save", str(section), str(key_value), str(new_value)))
 
-
-    def finished_first_loading(self, loaded_settings_dict: dict):
-        self.all_settings_loaded.emit(loaded_settings_dict)
-
-    def emit_setting_changed(self, key_value, new_value):
-        self.all_settings_loaded.emit(key_value, new_value)
-
-    def all_classes_ready(self):
-        print("x")
-
-class config_worker(QObject):
-    job_finished = Signal(str)
-    all_data = Signal(dict)
-
-    use_degrees = False
-    decimal_places = 2
-    darkmode = True
-    after_paste_enter = False
-
-    def __init__(self, action, section, key_value, new_value):
-        super().__init__()
-
-        self.action = action
-        self.section = section
-        self.key_value = key_value
-        self.new_value = new_value
-
-    def load_all(self):
-        global use_degrees, decimal_places, darkmode, after_paste_enter
-        settings_dict = {}
-
-        if first_run == True:
-            ergebnis = Config_manager(self.action, self.section, self.key_value, self.new_value)
-            settings_dict = json.loads(ergebnis)
-            use_degrees = str(settings_dict['use_degrees'])
-            decimal_places = int(settings_dict['decimal_places'])
-            darkmode = str(settings_dict['darkmode'])
-            after_paste_enter = str(settings_dict['after_paste_enter'])
-
-            self.all_data.emit(settings_dict)
-            global_config_signals.all_settings_loaded.emit(
-                settings_dict)
-
-        else:
-            return settings_dict
-
-    def load(self):
-        if key_value == "use_degrees":
-            return use_degrees
-        elif key_value == "decimal_places":
-            return decimal_places
-        elif key_value == "darkmode":
-            return darkmode
-        elif key_value == "after_paste_enter":
-            return after_paste_enter
-
-    def save(self):
-        global use_degrees, decimal_places, darkmode,after_paste_enter
-        result_code = Config_manager(self.action, self.section, self.key_value, self.new_value)
-        if result_code == "1":
-            global_config_signals.setting_changed.emit(self.section, self.key_value)
-        self.job_finished.emit(result_code)
 
 
 class SettingsDialog(QtWidgets.QDialog):
     settings_saved = Signal()
+    config_handler = Config_Signal()
 
     def __init__(self, parent=None):
-        global previous_is_degree_active, previous_darkmode_active, previous_auto_enter_active, previous_input_text
         super().__init__(parent)
-        self.load_worker = config_worker("load", "all", "", "")
 
-        self.load_worker.all_data.connect(self.load_all_settings)
-
-        self.load_thread = threading.Thread(target=self.load_worker.load_all)
-        self.load_thread.start()
-        previous_is_degree_active = ""
-        previous_darkmode_active = ""
-        previous_auto_enter_active = ""
-        previous_input_text = ""
-
+        self.previous_is_degree_active = "False"
+        self.previous_darkmode_active = "False"
+        self.previous_auto_enter_active = "False"
+        self.previous_input_text = "2"
 
         self.setWindowTitle("Calculator Settings")
         self.resize(300, 200)
         self.setMinimumSize(300, 200)
         self.setMaximumSize(300, 200)
-
 
         main_layout = QtWidgets.QVBoxLayout(self)
 
@@ -215,7 +149,6 @@ class SettingsDialog(QtWidgets.QDialog):
         self.darkmode = QtWidgets.QCheckBox("Darkmode")
         main_layout.addWidget(self.darkmode)
 
-
         button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
         main_layout.addWidget(button_box)
         main_layout.addStretch(1)
@@ -223,45 +156,104 @@ class SettingsDialog(QtWidgets.QDialog):
         button_box.accepted.connect(self.save_settings)
 
         button_box.rejected.connect(self.reject)
-        #self.on_global_setting_update("darkmode", "True")
+        self.load_current_settings()
+        self.update_darkmode()
+
+    # 2e2e2e
+    # 121212
+    def load_current_settings(self):
+
+        def get_setting(key_value):
+            response = self.config_handler.load(key_value)
+
+            if response == "-1":
+                return None
+            return response
+
+        decimals_str = get_setting("decimal_places")
+        if decimals_str is not None:
+            self.input_field.setPlaceholderText(decimals_str)
+        else:
+            self.input_field.setPlaceholderText('2')
+
+        is_degree_active_str = get_setting("use_degrees")
 
 
+        if str(is_degree_active_str) == "True":
+            self.is_degree_mode_check.setChecked(True)
+        else:
+            self.is_degree_mode_check.setChecked(False)
+
+
+        after_paste_enter_str = get_setting("after_paste_enter")
+        if str(after_paste_enter_str) == "True":
+            self.after_paste_enter.setChecked(True)
+        else:
+            self.after_paste_enter.setChecked(False)
+        darkmode_active_str = get_setting("darkmode")
+        if str(darkmode_active_str) == "True":
+            self.darkmode.setChecked(True)
+        elif str(darkmode_active_str) == "False":
+            self.darkmode.setChecked(False)
+
+        self.previous_is_degree_active = is_degree_active_str if is_degree_active_str is not None else "False"
+        self.previous_darkmode_active = darkmode_active_str if darkmode_active_str is not None else "False"
+        self.previous_auto_enter_active = after_paste_enter_str if after_paste_enter_str is not None else "False"
+        self.previous_input_text = decimals_str if decimals_str is not None else "2"
+
+        self.update_darkmode()
 
     def save_settings(self):
-        global previous_is_degree_active, previous_darkmode_active, previous_auto_enter_active, previous_input_text
-        is_degree_active = self.is_degree_mode_check.isChecked()
-        darkmode_active = self.darkmode.isChecked()
-        auto_enter_active = self.after_paste_enter.isChecked()
+
+        is_degree_active = str(self.is_degree_mode_check.isChecked())
+        darkmode_active = str(self.darkmode.isChecked())
+        auto_enter_active = str(self.after_paste_enter.isChecked())
+
         input_text = self.input_field.text()
-
         input_decimals = input_text if input_text else "2"
-
-
-        if str(is_degree_active) != str(previous_is_degree_active):
-            worker_instanz = config_worker("save", "Scientific_Options", "use_degrees", str(is_degree_active))
-            mein_thread = threading.Thread(target=worker_instanz.save)
-            mein_thread.start()
-
-
-        if str(darkmode_active) != str(previous_darkmode_active):
-            worker_instanz = config_worker("save", "UI", "darkmode", str(darkmode_active))
-            mein_thread = threading.Thread(target=worker_instanz.save)
-            mein_thread.start()
-
-
-        if str(auto_enter_active) != str(previous_auto_enter_active):
-            worker_instanz = config_worker("save", "UI", "auto_enter_active", str(auto_enter_active))
-            mein_thread = threading.Thread(target=worker_instanz.save)
-            mein_thread.start()
-
-
-        if str(input_text) != str(previous_input_text):
-            worker_instanz = config_worker("save", "Math_Options", "decimal_places", str(input_text))
-            mein_thread = threading.Thread(target=worker_instanz.save)
-            mein_thread.start()
-
-
+        default_decimals = self.input_field.placeholderText() if self.input_field.placeholderText() else "2"
+        input_decimals = input_text if input_text else default_decimals
         erfolgreich_gespeichert = True
+
+
+
+        if (is_degree_active != self.previous_is_degree_active):
+            response = self.config_handler.save("Scientific_Options", "use_degrees", str(is_degree_active))
+            if response != "1":
+                erfolgreich_gespeichert = False
+                print("Fehler bei " + is_degree_active)
+            elif response == "1":
+                self.previous_is_degree_active = is_degree_active
+
+        if darkmode_active != self.previous_darkmode_active:
+            response = self.config_handler.save("UI","darkmode", str(darkmode_active))
+            if response != "1":
+                erfolgreich_gespeichert = False
+                print("Fehler bei " + darkmode_active)
+
+
+            elif response == "1":
+                self.previous_darkmode_active = darkmode_active
+
+
+        if auto_enter_active != self.previous_auto_enter_active:
+            response = self.config_handler.save("UI","after_paste_enter", str(auto_enter_active))
+            if response != "1":
+                erfolgreich_gespeichert = False
+                print("Fehler bei " + auto_enter_active)
+
+
+            elif response == "1":
+                self.previous_auto_enter_active = auto_enter_active
+
+        if input_decimals != self.previous_input_text:
+            response = self.config_handler.save("Math_Options", "decimal_places", str(input_decimals))
+
+            if response != "1":
+                erfolgreich_gespeichert = False
+                print("Fehler bei " + input_decimals)
+            elif response == "1":
+                self.previous_input_text = input_decimals
 
 
         if erfolgreich_gespeichert:
@@ -270,58 +262,22 @@ class SettingsDialog(QtWidgets.QDialog):
         else:
             QtWidgets.QMessageBox.critical(self, "Fehler", "Nicht alle Einstellungen konnten gespeichert werden.")
             self.reject()
-
-
-        previous_is_degree_active = is_degree_active
-        previous_darkmode_active = darkmode_active
-        previous_auto_enter_active = auto_enter_active
-        previous_input_text = input_text
+        Config_Signal()
+        self.load_current_settings()
 
 
 
 
-    def on_global_setting_update(self, key_value, new_value):
-        if key_value == "darkmode" and new_value == "True":
+    def update_darkmode(self):
+        if Config_manager("load", "UI", "darkmode", "0") == "True":
             self.setStyleSheet("""
-                            QDialog {background-color: #121212;}
-                            QLabel {color: white;}
-                            QCheckBox {color: white;}
-                            QLineEdit {background-color: #444444;color: white;border: 1px solid #666666;}
-                            QDialogButtonBox QPushButton {background-color: #666666;color: white;}""")
-        elif key_value == "darkmode" and new_value == "False":
+                        QDialog {background-color: #121212;}
+                        QLabel {color: white;}
+                        QCheckBox {color: white;}
+                        QLineEdit {background-color: #444444;color: white;border: 1px solid #666666;}
+                        QDialogButtonBox QPushButton {background-color: #666666;color: white;}""")
+        else:
             self.setStyleSheet("")
-
-
-
-    def load_all_settings(self, settings_dict: dict):
-        global previous_is_degree_active, previous_darkmode_active, previous_auto_enter_active, previous_input_text
-
-
-        use_degrees = boolean(settings_dict['use_degrees'])
-        decimal_places = int(settings_dict['decimal_places'])
-        darkmode = boolean(settings_dict['darkmode'])
-        after_paste_enter = boolean(settings_dict['after_paste_enter'])
-
-        self.is_degree_mode_check.setChecked(use_degrees)
-        self.darkmode.setChecked(darkmode)
-        self.after_paste_enter.setChecked(after_paste_enter)
-        self.input_field.setText(str(decimal_places))
-
-
-        previous_is_degree_active = self.is_degree_mode_check.isChecked()
-        previous_darkmode_active = self.darkmode.isChecked()
-        previous_auto_enter_active = self.after_paste_enter.isChecked()
-        previous_input_text = self.input_field.text()
-        if darkmode == "True":
-            self.setStyleSheet("""
-                            QDialog {background-color: #121212;}
-                            QLabel {color: white;}
-                            QCheckBox {color: white;}
-                            QLineEdit {background-color: #444444;color: white;border: 1px solid #666666;}
-                            QDialogButtonBox QPushButton {background-color: #666666;color: white;}""")
-        elif darkmode == False:
-            self.setStyleSheet("")
-
 
 
 class CalculatorPrototype(QtWidgets.QWidget):
@@ -357,7 +313,6 @@ class CalculatorPrototype(QtWidgets.QWidget):
         self.display.setSizePolicy(expanding_policy)
         main_v_layout.addWidget(self.display, 1)
 
-
         button_container = QtWidgets.QWidget()
         main_v_layout.addWidget(button_container, 4)
 
@@ -371,8 +326,6 @@ class CalculatorPrototype(QtWidgets.QWidget):
         for j in range(5):  # horizental
             button_grid.setColumnStretch(j, 1)
 
-
-
         buttons = [
             ('⚙️', 0, 0), ('📋', 0, 1), ('↷', 0, 2), ('↶', 0, 3), ('<', 0, 4),
 
@@ -380,7 +333,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
             ('sin(', 2, 0), ('(', 2, 1), (')', 2, 2), ('^(', 2, 3), ('*', 2, 4),
 
-            ('cos(', 3, 0),  ('7', 3, 1), ('8', 3, 2), ('9', 3, 3), ('-', 3, 4),
+            ('cos(', 3, 0), ('7', 3, 1), ('8', 3, 2), ('9', 3, 3), ('-', 3, 4),
 
             ('tan(', 4, 0), ('4', 4, 1), ('5', 4, 2), ('6', 4, 3), ('+', 4, 4),
 
@@ -400,7 +353,6 @@ class CalculatorPrototype(QtWidgets.QWidget):
             elif text == '⚙️':
                 button.clicked.connect(self.open_settings)
 
-
             button.clicked.connect(lambda checked=False, val=text: self.handle_button_press(val))
             button_grid.addWidget(button, row, col)
             self.button_objects[text] = button
@@ -409,10 +361,10 @@ class CalculatorPrototype(QtWidgets.QWidget):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.setMinimumSize(400, 540)
-        global  first_run
+        global first_run
         if first_run == False:
             for button_text, button_instance in self.button_objects.items():
-                experiment = (button_instance.height()/8)*2
+                experiment = (button_instance.height() / 8) * 2
                 if experiment <= 12:
                     experiment = 12
                 font = button_instance.font()
@@ -423,7 +375,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 font = button_instance.font()
                 font.setPointSize((12))
                 button_instance.setFont(font)
-                first_run  = False
+                first_run = False
 
     def handle_button_press(self, value):
         global undo
@@ -446,7 +398,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
             if marker_to_find != "":
                 try:
                     marker_index = current_text.index(marker_to_find)
-                    start_index = marker_index+1
+                    start_index = marker_index + 1
                     temp_new_text = current_text[start_index:]
                     if temp_new_text.startswith(' '):
                         temp_new_text = temp_new_text[1:]
@@ -478,7 +430,6 @@ class CalculatorPrototype(QtWidgets.QWidget):
             else:
                 thread_active = True
                 self.update_return_button()
-
 
             self.display.setText("...")
             return_button = self.button_objects['⏎']
@@ -553,9 +504,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
         undo.append(current_text)
         redo.clear()
 
-
         print(f"Es wurde die Taste '{value}' gedrückt.")
-
 
     def update_return_button(self):
         global thread_active
@@ -571,10 +520,10 @@ class CalculatorPrototype(QtWidgets.QWidget):
         return_button.update()
 
     def update_darkmode(self):
-        global  darkmode
+        global darkmode
         global thread_active
-        darkmode = Config_manager("load", "UI", "darkmode", "0") == "True"
-        if darkmode == True:
+
+        if Config_manager("load", "UI", "darkmode", "0") == "True":
             for text, button in self.button_objects.items():
                 if text != '⏎':
                     button.setStyleSheet("background-color: #121212; color: white; font-weight: bold;")
@@ -593,7 +542,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
             self.setStyleSheet(f"background-color: #121212;")
             self.display.setStyleSheet("background-color: #121212; color: white; font-weight: bold;")
 
-        elif darkmode == False:
+        elif Config_manager("load", "UI", "darkmode", "0") == "False":
             for text, button in self.button_objects.items():
                 if text != '⏎':
                     button.setStyleSheet("font-weight: normal;")
@@ -616,7 +565,6 @@ class CalculatorPrototype(QtWidgets.QWidget):
         settings_dialog.exec()
         self.update_darkmode()
 
-
     def Calc_result(self, ergebnis, current_text):
         global received_result
         received_result = True
@@ -636,23 +584,8 @@ class CalculatorPrototype(QtWidgets.QWidget):
         redo.clear()
 
 
-def starte_ladevorgang():
-    global global_config_signals
-    global_config_signals = Config_Signals()
-    Config_Signals()
-    SettingsDialog()
-    CalculatorPrototype()
-    print("--- MAIN: 'starte_ladevorgang' wurde aufgerufen.")
-    worker = config_worker("load", "all", "...", "...")
-    print("--- MAIN: Ladevorgang ist durch. 'emit' wurde gesendet.")
-
-
-
 if __name__ == "__main__":
-    side_thread = threading.Thread(target=starte_ladevorgang)
-    side_thread.start()
-
-    global_config_signals
+    Config_Signal()
     app = QtWidgets.QApplication(sys.argv)
     window = CalculatorPrototype()
     window.show()
