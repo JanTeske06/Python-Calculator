@@ -217,56 +217,55 @@ class SettingsDialog(QtWidgets.QDialog):
         input_decimals = input_text if input_text else default_decimals
         erfolgreich_gespeichert = True
 
-
+        response = ""
+        error_message = ""
 
         if (is_degree_active != self.previous_is_degree_active):
             response = self.config_handler.save("Scientific_Options", "use_degrees", str(is_degree_active))
-            if response != "1":
+            if response != "1" and not response == "":
                 erfolgreich_gespeichert = False
-                print("Fehler bei " + is_degree_active)
+                print("Fehler beim speichern")
+                error_message = error_message + " / Degree mode"
             elif response == "1":
                 self.previous_is_degree_active = is_degree_active
 
         if darkmode_active != self.previous_darkmode_active:
             response = self.config_handler.save("UI","darkmode", str(darkmode_active))
-            if response != "1":
+            if response != "1" and not response == "":
                 erfolgreich_gespeichert = False
-                print("Fehler bei " + darkmode_active)
-
-
+                print("Fehler beim speichern")
+                error_message = error_message + " / Darkmode"
             elif response == "1":
                 self.previous_darkmode_active = darkmode_active
-                self.update_darkmode()
 
 
         if auto_enter_active != self.previous_auto_enter_active:
             response = self.config_handler.save("UI","after_paste_enter", str(auto_enter_active))
-            if response != "1":
+            if response != "1" and not response == "":
                 erfolgreich_gespeichert = False
-                print("Fehler bei " + auto_enter_active)
-
-
+                print("Fehler beim speichern")
+                error_message = error_message + " / Enter after Paste"
             elif response == "1":
                 self.previous_auto_enter_active = auto_enter_active
 
         if input_decimals != self.previous_input_text:
             response = self.config_handler.save("Math_Options", "decimal_places", str(input_decimals))
 
-            if response != "1":
+            if response != "1" and not response == "":
                 erfolgreich_gespeichert = False
-                print("Fehler bei " + input_decimals)
+                error_message = error_message + " / Decimals"
             elif response == "1":
                 self.previous_input_text = input_decimals
 
 
-        if erfolgreich_gespeichert:
+        if erfolgreich_gespeichert or response == "":
             self.settings_saved.emit()
             self.accept()
+            Config_Signal()
+            self.load_current_settings()
         else:
-            QtWidgets.QMessageBox.critical(self, "Fehler", "Nicht alle Einstellungen konnten gespeichert werden.")
-            self.reject()
-        Config_Signal()
-        self.load_current_settings()
+            QtWidgets.QMessageBox.critical(self, "Fehler", "Nicht alle Einstellungen konnten gespeichert werden." + error_message)
+
 
 
 
@@ -285,6 +284,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
 class CalculatorPrototype(QtWidgets.QWidget):
     config_handler = Config_Signal()
+    display_font_size = 4.8
     def __init__(self):
 
         global darkmode_active
@@ -292,8 +292,13 @@ class CalculatorPrototype(QtWidgets.QWidget):
         global expanding_policy
         global first_run
         super().__init__()
+
+
         icon_path = Path(__file__).resolve().parent.parent / "icons" / "icon.png"
         app_icon = QtGui.QIcon(str(icon_path))
+
+
+
         self.setWindowIcon(app_icon)
 
         self.button_objects = {}
@@ -364,6 +369,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
+
         self.setMinimumSize(400, 540)
         global first_run
         if first_run == False:
@@ -374,6 +380,12 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 font = button_instance.font()
                 font.setPointSize((experiment))
                 button_instance.setFont(font)
+
+            font = self.display.font()
+            font.setPointSize((self.display.height() / self.display_font_size) * 2)
+            self.display.setFont(font)
+
+
         elif first_run == True:
             for button_text, button_instance in self.button_objects.items():
                 font = button_instance.font()
@@ -387,6 +399,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
         global first_run
         global mein_thread
         global received_result
+
         current_text = self.display.text()
 
         if received_result == True:
@@ -488,7 +501,6 @@ class CalculatorPrototype(QtWidgets.QWidget):
             return
 
 
-
         elif value == '↷':
             if len(redo) > 0:
                 undo.append(redo.pop())
@@ -503,7 +515,44 @@ class CalculatorPrototype(QtWidgets.QWidget):
                 current_text = ""
             current_text += str(value)
 
+        MAX_FONT_SIZE = 46
+        MIN_FONT_SIZE = 10
+        
         self.display.setText(current_text)
+
+
+        font = self.display.font()
+        aktuelle_groesse = font.pointSize()
+        fm = QtGui.QFontMetrics(font)
+
+
+        r_margin = self.display.textMargins().right()
+        l_margin = self.display.textMargins().left()
+        padding = l_margin + r_margin + 5
+        verfuegbare_breite = self.display.width() - padding
+
+        text_breite = fm.horizontalAdvance(current_text)
+
+        while text_breite > verfuegbare_breite and aktuelle_groesse > MIN_FONT_SIZE:
+            aktuelle_groesse -= 1
+            font.setPointSize(aktuelle_groesse)
+            fm = QtGui.QFontMetrics(font)
+            text_breite = fm.horizontalAdvance(current_text)
+
+        temp_size = aktuelle_groesse
+
+        while temp_size < MAX_FONT_SIZE:
+            temp_size += 1
+            font.setPointSize(temp_size)
+            fm_temp = QtGui.QFontMetrics(font)
+            text_breite_temp = fm_temp.horizontalAdvance(current_text)
+            if text_breite_temp <= verfuegbare_breite:
+                aktuelle_groesse = temp_size
+            else:
+                temp_size -= 1
+                break
+        font.setPointSize(aktuelle_groesse)
+        self.display.setFont(font)
 
         undo.append(current_text)
         redo.clear()
