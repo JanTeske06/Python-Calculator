@@ -305,12 +305,12 @@ def translator(problem):
 
 
         elif current_char == 'π':
-                ergebnis_string = ScienceCalculator('π')
-                try:
-                    berechneter_wert = float(ergebnis_string)
-                    full_problem.append(berechneter_wert)
-                except ValueError:
-                    raise ValueError(f"Fehler bei Konstante π: {ergebnis_string}")
+            ergebnis_string = ScienceCalculator('π')
+            try:
+                berechneter_wert = Decimal(ergebnis_string)
+                full_problem.append(berechneter_wert)
+            except ValueError:
+                raise ValueError(f"Fehler bei Konstante π: {ergebnis_string}")
 
 
         else:
@@ -333,10 +333,10 @@ def translator(problem):
             einfuegen_noetig = False
 
             ist_funktionsname = isScOp(nachfolger) != -1
-            ist_zahl_oder_variable = isinstance(aktuelles_element, (int, float)) or "var" in str(aktuelles_element)
-            ist_klammer_oder_nachfolger = nachfolger == '(' or "var" in str(nachfolger) or isinstance(nachfolger,
-                                                                                                      (int,
-                                                                                                       float)) or ist_funktionsname
+            ist_zahl_oder_variable = isinstance(aktuelles_element, (int, float, Decimal)) or ("var" in str(aktuelles_element) and
+                                                                                              isinstance(aktuelles_element, str))
+            ist_klammer_oder_nachfolger = (nachfolger == '(' or ("var" in str(nachfolger) and isinstance(nachfolger, str)) or
+                                           isinstance(nachfolger, (int, float, Decimal)) or ist_funktionsname)
             ist_kein_operator = aktuelles_element not in Operations and nachfolger not in Operations
 
             if (ist_zahl_oder_variable or aktuelles_element == ')') and \
@@ -392,7 +392,7 @@ def ast(received_string):
                 ergebnis = ScienceCalculator(ScienceOp)
 
                 try:
-                    berechneter_wert = float(ergebnis)
+                    berechneter_wert = Decimal(ergebnis)
                     return Number(berechneter_wert)
                 except ValueError:
                     raise SyntaxError(f"Fehler bei Konstante π: {ergebnis}")
@@ -424,7 +424,8 @@ def ast(received_string):
                 except ValueError:
                     raise SyntaxError(f"Fehler bei wissenschaftlicher Funktion: {ergebnis_string}")
 
-
+        elif isinstance(token, Decimal):
+            return Number(token)
         elif isInt(token):
             return Number(token)
 
