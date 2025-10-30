@@ -550,7 +550,7 @@ def cleanup(ergebnis):
         if gerundetes_ergebnis != ergebnis:
             rounding = True
 
-        return gerundetes_ergebnis
+        return gerundetes_ergebnis.normalize()
 
     elif isinstance(ergebnis, (int, float)):
         if ergebnis == int(ergebnis):
@@ -568,6 +568,8 @@ def cleanup(ergebnis):
 
                 return ergebnis
             return ergebnis
+
+
     return ergebnis
 
 
