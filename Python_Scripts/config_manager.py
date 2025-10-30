@@ -2,56 +2,71 @@
 import sys
 import configparser
 from pathlib import Path
+import json
 
 config = Path(__file__).resolve().parent.parent / "config.ini"
 
+def boolean(section, value):
+    if value == "True":
+        return True
+    elif value == "False":
+        return False
+    else:
+        return "-1"
 
 def load_settings(section, key_value):
     cfg_instance = configparser.ConfigParser()
     cfg_instance.read(config, encoding='utf-8')
 
-    try:
-        return_value = cfg_instance.get(str(section), str(key_value))
-        print(return_value)
-    except (configparser.NoSectionError, configparser.NoOptionError, ValueError):
-        print("-1")
+
+    if section == "all":
+        config_data = {
+            "use_degrees": cfg_instance.get("Scientific_Options", "use_degrees"),
+            "decimal_places": cfg_instance.get("Math_Options", "decimal_places"),
+            "darkmode": cfg_instance.get("UI", "darkmode"),
+            "after_paste_enter": cfg_instance.get("UI", "after_paste_enter")
+        }
+        print(json.dumps(config_data))
+
+    else:
+        try:
+            return_value = cfg_instance.get(str(section), str(key_value))
+            print(return_value)
+        except (configparser.NoSectionError, configparser.NoOptionError, ValueError):
+            print("-1")
 
 
-def save_settings(section, key_value, new_value):
+def save_settings(key_value, new_value):
     config_file = configparser.ConfigParser()
     config_file.read(config, encoding='utf-8')
     success = False
-    if section not in config_file:
-        config_file[section] = {}
 
-    if section == "Math_Options":
-        if key_value == "decimal_places":
+    if key_value == "decimal_places":
             if new_value != "":
                 try:
                     val = int(new_value)
                     if val <= 2:
                         val = 2
 
-                    config_file.set('Math_Options', 'decimal_places', str(val))  # <--- KORREKTUR: str(val)
+                    config_file.set('Math_Options', 'decimal_places', str(val))
                     success = True
                 except:
-                    config_file.set('Math_Options', 'decimal_places', '2')  # Fallback
+                    config_file.set('Math_Options', 'decimal_places', str(2))
                     success = False
             else:
                 success = False
 
-    elif section == "UI":
-        if key_value == "darkmode" or key_value == "after_paste_enter":
+    elif key_value == "darkmode" or key_value == "after_paste_enter":
             if new_value in ("True", "False"):
-                config_file.set(section, key_value, new_value)
+                config_file.set('UI', key_value, str(new_value))
                 success = True
             else:
                 success = False
 
-    elif section == "Scientific_Options":
-        if key_value == "use_degrees":
+
+    elif key_value == "use_degrees":
             if new_value in ("True", "False"):
-                config_file.set('Scientific_Options', 'use_degrees', new_value)
+                config_file.set('Scientific_Options', 'use_degrees', str(new_value))
                 success = True
             else:
                 success = False
@@ -71,20 +86,23 @@ def save_settings(section, key_value, new_value):
 
 
 def main():
-    if len(sys.argv) < 5:
+    test = 0
+    if len(sys.argv) < 5 and test == 0:
         print("Fehler. Es wurden nicht genügend Argumente übergeben.")
         sys.exit(1)
     else:
+        #
         befehl = sys.argv[1]
         section = sys.argv[2]
         key_value = sys.argv[3]
         new_value = sys.argv[4]
-    # befehl = "save"
-    # section = "UI"
-    # key_value = "darkmode"
-    # new_value = "True"
+        # befehl = "save"
+        # section = "UI"
+        # key_value = "darkmode"
+        # new_value = "False"
+
     if befehl == "save":
-        save_settings(section, key_value, new_value)
+        save_settings(str(key_value), str(new_value))
 
     elif befehl == "load":
         load_settings(section, key_value)
@@ -95,4 +113,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
