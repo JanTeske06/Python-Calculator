@@ -574,7 +574,6 @@ def cleanup(ergebnis):
     return ergebnis
 
 
-
 def main():
     global global_subprocess, var_counter, var_list
     var_counter = 0
@@ -597,38 +596,45 @@ def main():
             ergebnis = finaler_baum.evaluate()
         else:
             if global_subprocess == "0":
-                print(
-                    "FEHLER: Der Solver wurde auf einer Nicht-Gleichung oder der Taschenrechner auf einer Gleichung aufgerufen.")
+                print("!!ERROR!! Der Solver wurde auf einer Nicht-Gleichung oder der Taschenrechner auf einer Gleichung aufgerufen.")
+                print("!!ERROR!! Der Solver wurde auf einer Nicht-Gleichung oder der Taschenrechner auf einer Gleichung aufgerufen.")
             return
-
 
         ergebnis = cleanup(ergebnis)
         ungefaehr_zeichen = "\u2248"
 
+        if isinstance(ergebnis, Decimal):
+            try:
+                ausgabe_string = ergebnis.to_normal_string()
+            except AttributeError:
+                ausgabe_string = str(ergebnis)
+        else:
+            ausgabe_string = str(ergebnis)
+
         if global_subprocess == "0":
             variable_name = var_list[0] if var_list else "Ergebnis"
-            print(f"Das Ergebnis der Berechnung ist: {variable_name} = {ergebnis}")
+            print(f"Das Ergebnis der Berechnung ist: {variable_name} = {ausgabe_string}")
 
-        elif cas ==True and rounding == True:
-            print(f"x {ungefaehr_zeichen}" + str(ergebnis))
+        elif cas == True and rounding == True:
+            print(f"x {ungefaehr_zeichen}" + ausgabe_string)
 
-        elif cas ==True:
-            print("x = " + str(ergebnis))
+        elif cas == True:
+            print("x = " + ausgabe_string)
 
-        elif rounding ==True:
-            print(f"{ungefaehr_zeichen} " + str(ergebnis))
+        elif rounding == True:
+            print(f"{ungefaehr_zeichen} " + ausgabe_string)
 
         else:
-            print("= " + str(ergebnis))
+            print("= " + ausgabe_string)
 
 
     except (ValueError, SyntaxError, ZeroDivisionError) as e:
-        print(f"FEHLER: {e}")
+        print(f"!!ERROR!! {e}")
     except Exception as e:
-        print(f"UNERWARTETER FEHLER: {e}")
+        print(f"!!ERROR!! UNERWARTETER FEHLER: {e}")
 
 
 if __name__ == "__main__":
-    debug = 0  # 1 = activated, 0 = deactivated
+    debug = 1  # 1 = activated, 0 = deactivated
     #time.sleep(100)
     main()
