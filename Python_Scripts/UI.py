@@ -612,7 +612,7 @@ class CalculatorPrototype(QtWidgets.QWidget):
             text_breite = fm.horizontalAdvance(current_text)
 
             while text_breite > verfuegbare_breite and aktuelle_groesse > MIN_FONT_SIZE:
-                aktuelle_groesse -= 1
+                aktuelle_groesse -= 0.2
                 font.setPointSize(aktuelle_groesse)
                 fm = QtGui.QFontMetrics(font)
                 text_breite = fm.horizontalAdvance(current_text)
@@ -697,7 +697,12 @@ class CalculatorPrototype(QtWidgets.QWidget):
         received_result = True
         equation = current_text
         self.update_return_button()
-        if ergebnis == "True":
+        if ergebnis.startswith("!!ERROR!!"):
+            error_message = ergebnis.replace("!!ERROR!! ", "")
+            self.display.setText("Error: " + error_message)
+            self.update_font_size_display()
+            return
+        elif ergebnis == "True":
             current_text = (ergebnis + "    " + current_text)
             print(f"Ergebnis: {ergebnis}")
         elif ergebnis == "False":
@@ -724,3 +729,4 @@ if __name__ == "__main__":
     window = CalculatorPrototype()
     window.show()
     sys.exit(app.exec())
+
